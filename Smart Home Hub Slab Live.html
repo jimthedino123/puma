@@ -1,0 +1,1866 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Smart Home Hub</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap">
+<style>
+/* Slab UI after Lumen OS 2: solid colour slabs, giant numerals, no gradients, no glass, no shadows. One typeface. */
+:root{--vw:1vw;--vh:1vh;--ink:#141414;--cream:#F3F0E8;--orange:#FF6A2B;--lilac:#C8B8FF;--lime:#DFFF5E;--sky:#7FD4FF;
+  --f-display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;--f-ui:var(--f-display);--f-mono:var(--f-display);color-scheme:light;background:var(--cream)}
+:root:has(.stage[data-theme=dark]){background:var(--ink)}
+:root:has(.stage[data-theme=frosted]){background:var(--orange)}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:transparent;color:var(--ink);font:15px/1.4 var(--f-ui);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+h2,h3,h4,p{margin:0}
+.stage{position:relative;min-height:100%;display:flex;flex-direction:column;padding-block:14px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
+  --r:28px;--page:var(--cream);--paper:var(--cream);--tx:var(--ink);--dockbg:var(--ink);--dockfg:var(--cream);--on-e:var(--cream);
+  --c-a:var(--orange);--c-b:var(--lilac);--c-c:var(--lime);--c-d:var(--sky);--c-e:var(--ink);background:var(--page);color:var(--tx)}
+.stage[data-theme=dark]{--page:var(--ink);--paper:#242422;--tx:var(--cream);--dockbg:var(--cream);--dockfg:var(--ink);--c-e:var(--cream);--on-e:var(--ink)}
+.stage[data-theme=frosted]{--page:var(--orange);--c-e:var(--cream);--on-e:var(--ink)}
+.stage[data-theme=frosted] .slot,.stage[data-theme=frosted] .dock,.stage[data-theme=frosted] .sheet{border:3px solid var(--ink)}
+.stage[data-set=aurora]{--c-a:var(--lime);--c-b:var(--sky);--c-c:var(--orange);--c-d:var(--lilac)}
+.stage[data-set=lagoon]{--c-a:var(--sky);--c-b:var(--lime);--c-c:var(--lilac);--c-d:var(--orange)}
+.wall{display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.photo .wall{display:block}
+
+.board{position:relative;z-index:1;flex:1;align-content:start;display:grid;gap:12px;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:104px;grid-auto-flow:dense}
+.sz-small{grid-column:span 4;grid-row:span 2}.sz-regular{grid-column:span 4;grid-row:span 3}.sz-large{grid-column:span 8;grid-row:span 4}
+.slot{position:relative;min-height:0;min-width:0;border-radius:var(--r);--on:var(--ink);background:var(--sc);color:var(--on);--dim:color-mix(in srgb,var(--on) 66%,transparent)}
+.s-a{--sc:var(--c-a)}.s-b{--sc:var(--c-b)}.s-c{--sc:var(--c-c)}.s-d{--sc:var(--c-d)}.s-e{--sc:var(--c-e);--on:var(--on-e)}
+.s-x1{--sc:var(--c-b)}.s-x2{--sc:var(--c-c)}.s-x3{--sc:var(--c-d)}.s-x4{--sc:var(--c-a)}.s-x5{--sc:var(--c-b)}.s-x6{--sc:var(--c-c)}.s-x7{--sc:var(--c-d)}.s-x8{--sc:var(--c-a)}.s-x9{--sc:var(--c-b)}
+.dockcell{grid-column:1/-1;display:flex;align-items:stretch;min-width:0;min-height:92px}
+.dock{display:flex;justify-content:space-around;align-items:center;gap:8px;padding:10px;width:100%;border-radius:var(--r);background:var(--dockbg);color:var(--dockfg)}
+
+.w{position:absolute;inset:0;container-type:size;border-radius:var(--r);overflow:hidden}
+.in{position:absolute;inset:0;padding:clamp(14px,5cqmin,26px);display:flex;flex-direction:column;gap:clamp(8px,3cqmin,16px);overflow:auto;scrollbar-width:thin;scrollbar-color:var(--on) transparent}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:36px;min-height:26px}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.tag{font:600 11px var(--f-mono);padding:2px 9px;border:2px solid var(--on);border-radius:999px;white-space:nowrap}
+.note{color:var(--dim);font-size:13px;text-wrap:pretty}
+.gear{position:absolute;top:10px;right:10px;z-index:5;width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:50%;background:var(--on);color:var(--sc);cursor:pointer;opacity:0;transition:opacity .15s}
+.gear svg{width:18px;height:18px;fill:currentColor;stroke:none}
+.slot:hover .gear,.gear:focus-visible{opacity:1}
+@media (hover:none){.gear{opacity:.85}}
+button:focus-visible,a:focus-visible{outline:3px solid var(--on,var(--ink));outline-offset:2px}
+
+/* weather: the numeral is the design */
+.bignum{font:800 clamp(80px,46cqmin,300px)/.8 var(--f-display);letter-spacing:-.06em;margin-left:-.05em;display:flex;align-items:flex-start;font-variant-numeric:tabular-nums}
+.bignum sup{font-size:.3em;font-weight:700;margin:.12em 0 0 .08em;letter-spacing:0}
+.wx-main{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+.wx-cond{display:flex;align-items:center;gap:10px;font-size:clamp(15px,5cqmin,24px);font-weight:700;margin-top:14px}
+.wx-cond svg,.dv-top svg{width:1.35em;height:1.35em;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.wx-range{color:var(--dim);font:600 13px var(--f-mono);margin-top:4px}
+.hours{display:none;grid-template-columns:repeat(6,1fr);gap:6px;border-top:3px solid var(--on);padding-top:12px;text-align:center;font:600 12px var(--f-mono)}
+.hours b{display:block;font:800 22px var(--f-display);margin-top:2px}
+@container (min-height:300px){.hours{display:grid}}
+
+/* now playing */
+.mu-head{display:flex;align-items:center;gap:14px;min-width:0}
+.mu-art{--h:210;flex:none;width:clamp(52px,24cqmin,120px);aspect-ratio:1;border-radius:calc(var(--r)*.5);background:hsl(var(--h) 90% 64%);position:relative}
+.mu-art i{position:absolute;inset:28%;border-radius:50%;border:3px solid var(--ink)}
+.mu-meta{display:flex;flex-direction:column;min-width:0}
+.mu-title{font:800 clamp(17px,6cqmin,24px)/1.15 var(--f-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mu-artist{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.mu-bar{display:flex;align-items:center;gap:10px;font:600 11px var(--f-mono);color:var(--dim)}
+.track{flex:1;height:18px;display:flex;align-items:center;cursor:pointer;position:relative}
+.track::before{content:"";position:absolute;left:0;right:0;height:8px;border-radius:4px;background:color-mix(in srgb,var(--on) 22%,transparent)}
+.track i{position:relative;height:8px;border-radius:4px;background:var(--on);display:block}
+.mu-ctl{display:flex;justify-content:center;align-items:center;gap:14px}
+.ctl{width:40px;height:40px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;cursor:pointer}
+.ctl svg{width:20px;height:20px;stroke:currentColor;fill:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ctl.main{width:54px;height:54px;background:var(--on);color:var(--sc)}
+.demo{display:none;text-align:center;font-size:11px;color:var(--dim)}
+@container (min-height:270px){.demo{display:block}}
+
+/* todo */
+.td-list{list-style:none;margin:0;padding:0;flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:4px}
+.td-list li{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:2px solid color-mix(in srgb,var(--on) 20%,transparent);font-weight:600}
+.td-list li span{flex:1;min-width:0;overflow-wrap:anywhere}
+.td-list li.done span{text-decoration:line-through;text-decoration-thickness:2px;color:var(--dim)}
+.td-list li.empty{color:var(--dim);border:0}
+.chk{flex:none;width:24px;height:24px;border-radius:8px;border:3px solid var(--on);background:transparent;display:grid;place-items:center;cursor:pointer;padding:0}
+.done .chk{background:var(--on);color:var(--sc)}
+.chk svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.rm{flex:none;width:26px;height:26px;border:0;border-radius:50%;background:transparent;display:grid;place-items:center;cursor:pointer;opacity:.6;padding:0}
+.rm:hover{opacity:1}
+.rm svg,.iconbtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.td-add,.sr-form{display:flex;gap:8px}
+.iconbtn{flex:none;width:42px;height:42px;display:grid;place-items:center;border:2px solid var(--on);border-radius:50%;background:transparent;cursor:pointer;padding:0;text-decoration:none;color:inherit}
+.iconbtn.solid{background:var(--on);color:var(--sc)}
+
+/* device */
+.dv-top{display:flex;align-items:center;gap:14px}
+.dv-top svg{width:clamp(34px,10cqmin,56px);height:auto;aspect-ratio:1}
+.dv-state{font:800 clamp(28px,11cqmin,56px)/1 var(--f-display);letter-spacing:-.03em}
+.dv-sub{color:var(--dim);font:600 12px var(--f-mono);margin-top:4px}
+.dv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:18px 28px}
+.dv-grid h4{margin-bottom:6px}
+.dv-grid dl{margin:0}
+.dv-grid dl div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:2px solid color-mix(in srgb,var(--on) 20%,transparent)}
+.dv-grid dt{color:var(--dim)}
+.dv-grid dd{margin:0;font:600 12.5px var(--f-mono);text-align:right;overflow-wrap:anywhere}
+
+/* search, clock, notes, controls */
+.sr,.ck{justify-content:center}
+.sr-title{font:800 clamp(24px,10cqmin,44px)/1 var(--f-display);letter-spacing:-.03em}
+.ck-time{font:800 clamp(64px,34cqmin,240px)/.82 var(--f-display);letter-spacing:-.06em;margin-left:-.04em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ck-date{font-size:clamp(14px,5cqmin,22px);font-weight:700;color:var(--dim)}
+.nt textarea{flex:1;resize:none;min-height:60px}
+.ct-list{display:flex;flex-direction:column;gap:14px}
+.swrow{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;font-weight:600}
+.sw{appearance:none;-webkit-appearance:none;flex:none;position:relative;width:54px;height:32px;margin:0;border-radius:999px;background:transparent;border:3px solid var(--on);cursor:pointer}
+.sw::before{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--on);transition:transform .2s,background .2s}
+.sw:checked{background:var(--on)}
+.sw:checked::before{transform:translateX(22px);background:var(--sc)}
+.sw:focus-visible{outline:3px solid var(--on);outline-offset:3px}
+.rng{--p:50%;appearance:none;-webkit-appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
+.rng::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--on) var(--p),color-mix(in srgb,var(--on) 22%,transparent) var(--p))}
+.rng::-moz-range-track{height:8px;border-radius:4px;background:color-mix(in srgb,var(--on) 22%,transparent)}
+.rng::-moz-range-progress{height:8px;border-radius:4px;background:var(--on)}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;margin-top:-9px;border-radius:50%;border:4px solid var(--sc,var(--paper));background:var(--on)}
+.rng::-moz-range-thumb{width:18px;height:18px;border-radius:50%;border:4px solid var(--sc,var(--paper));background:var(--on)}
+.rng:focus-visible{outline:3px solid var(--on);outline-offset:3px;border-radius:14px}
+.seg{display:flex;gap:4px;padding:4px;border-radius:calc(var(--r)*.6);border:2px solid var(--on)}
+.seg button{flex:1;border:0;background:transparent;padding:9px 10px;border-radius:calc(var(--r)*.45);cursor:pointer;font-weight:700;white-space:nowrap}
+.seg button[aria-checked=true]{background:var(--on);color:var(--sc)}
+.btn{border:2px solid var(--on);background:transparent;border-radius:999px;padding:10px 20px;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--on);color:var(--sc)}
+.ct-row{display:flex;justify-content:space-between;margin-bottom:4px;font-weight:600}
+.ct-row b{font:800 20px var(--f-display)}
+
+/* fields */
+.field{font:inherit;font-weight:500;color:var(--on);background:color-mix(in srgb,var(--on) 8%,transparent);border:2px solid var(--on);border-radius:calc(var(--r)*.55);padding:10px 14px;min-width:0;width:100%;outline:none}
+.field:focus-visible{box-shadow:inset 0 0 0 2px var(--on)}
+.field::placeholder{color:var(--dim)}
+select.field option{color:var(--ink);background:var(--cream)}
+textarea.field{line-height:1.5}
+
+/* sheets: a big slab over the board */
+.scrim{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:color-mix(in srgb,var(--ink) 38%,transparent);
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet{position:relative;width:min(620px,100%);border-radius:min(var(--r),36px);--sc:var(--paper);--on:var(--tx);--dim:color-mix(in srgb,var(--on) 66%,transparent);background:var(--sc);color:var(--on)}
+.sheeted .board{opacity:.3;pointer-events:none}
+.board{transition:opacity .2s}
+.toast{position:fixed;z-index:60;top:max(16px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:min(520px,calc(100% - 32px));padding:12px 20px;border-radius:999px;font-weight:700;background:var(--dockbg);color:var(--dockfg)}
+.toast svg{flex:none;width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.sb{position:relative;max-height:min(calc(var(--vh)*82),780px);overflow:auto;padding:24px;display:flex;flex-direction:column;gap:22px;outline:none;scrollbar-width:thin;scrollbar-color:var(--on) transparent}
+.sh-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sh-head h2{font:800 34px/1 var(--f-display);letter-spacing:-.04em}
+.sb section{display:flex;flex-direction:column;gap:10px}
+.sb h3{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.srow{display:grid;grid-template-columns:110px 1fr 44px;align-items:center;gap:12px}
+.srow output{font:700 12px var(--f-mono);text-align:right}
+.wps{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.wp{aspect-ratio:8/5;border-radius:calc(var(--r)*.4);background-size:cover;background-position:center;border:3px solid transparent;cursor:pointer;padding:0;position:relative;color:var(--ink)}
+.wp[data-set=dusk]{background:var(--orange)}.wp[data-set=aurora]{background:var(--lime)}.wp[data-set=lagoon]{background:var(--sky)}
+.wp[aria-pressed=true]{border-color:var(--on)}
+.wp.up{background:transparent;border:2px dashed var(--on);color:var(--on);font-size:12px;font-weight:700;display:grid;place-items:center;text-align:center;padding:6px}
+.wp span{position:absolute;left:6px;bottom:5px;font-size:11px;font-weight:700;background:var(--ink);color:var(--cream);padding:1px 7px;border-radius:6px}
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+.link{align-self:flex-start;background:none;border:0;padding:0;color:var(--dim);text-decoration:underline;cursor:pointer}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:14px;border:2px solid var(--on);border-radius:calc(var(--r)*.6);background:transparent;cursor:pointer}
+.card svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.card span{color:var(--dim);font-size:12.5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;flex-direction:column;align-items:flex-start;padding:8px 14px;border:2px solid var(--on);border-radius:999px;background:transparent;cursor:pointer;font-weight:700}
+.chip small{color:var(--dim);font-size:11px;font-weight:500}
+.card[aria-pressed=true],.chip[aria-pressed=true]{background:var(--on);color:var(--sc)}
+.card[aria-pressed=true] span,.chip[aria-pressed=true] small{color:inherit;opacity:.75}
+.fl{display:flex;flex-direction:column;gap:4px}
+.fl>span{color:var(--dim);font-size:12px;font-weight:600}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.lbl{font-weight:700}
+.dockbtn{width:52px;height:52px;display:grid;place-items:center;border:0;border-radius:calc(var(--r)*.6);background:color-mix(in srgb,var(--dockfg) 14%,transparent);color:inherit;cursor:pointer;padding:0;transition:background .12s,color .12s}
+.dockbtn:hover,.dockbtn:focus-visible{background:var(--lime);color:var(--ink)}
+.dockbtn svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+.s-f{--sc:var(--c-c)}.s-g{--sc:var(--c-a)}.s-h{--sc:var(--c-b)}
+.nw-list{list-style:none;margin:0;padding:0;flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.nw-list li{padding:8px 0;border-bottom:2px solid color-mix(in srgb,var(--on) 20%,transparent);display:flex;flex-direction:column;gap:2px}
+.nw-list a{color:inherit;font-weight:700;line-height:1.25;text-decoration:none}
+.nw-list a:hover{text-decoration:underline;text-decoration-thickness:2px}
+.nw-list small{color:var(--dim);font-weight:600}
+.nw-list li.empty{color:var(--dim);border:0}
+.dbg-dl{margin:0}
+.dbg-dl div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:2px solid color-mix(in srgb,var(--on) 20%,transparent)}
+.dbg-dl dt{color:var(--dim)}.dbg-dl dd{margin:0;font:600 12px var(--f-mono);text-align:right;overflow-wrap:anywhere}
+.dbg-log{margin:0;font:600 11px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;color:var(--dim)}
+.dbg .slot{outline:2px dashed var(--ink);outline-offset:-6px}
+.dbg .slot::after{content:attr(data-slot);position:absolute;left:8px;bottom:8px;z-index:6;background:var(--on);color:var(--sc);font:800 11px var(--f-mono);padding:1px 7px;border-radius:6px;text-transform:uppercase;pointer-events:none}
+.abt{margin:0}.abt div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:2px solid color-mix(in srgb,var(--on) 20%,transparent);font-weight:600}
+.abt dt{color:var(--dim)}.abt dd{margin:0;text-align:right}
+.abt button{background:none;border:0;padding:4px 0;font-weight:700;cursor:pointer}
+.egg{display:grid;place-items:center;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;padding:8px 0}
+.egg svg{width:min(320px,80%);height:auto;overflow:visible}
+.egg circle{transition:transform .6s cubic-bezier(.3,1.4,.5,1)}
+.swrow small{display:block;font-weight:500}
+.mp-frame{flex:1;min-height:0;width:100%;border:3px solid var(--on);border-radius:calc(var(--r)*.5);background:var(--cream)}
+a.tag{color:inherit;text-decoration:none}
+.fact-t{flex:1;display:flex;align-items:center;margin:0;font:800 clamp(20px,8cqmin,34px)/1.1 var(--f-display);letter-spacing:-.02em;text-wrap:balance}
+.ph-view{flex:1;min-height:0;border-radius:calc(var(--r)*.5);background:var(--on) center/cover no-repeat}
+.ph-view.empty{display:grid;place-items:center;background:transparent;border:3px dashed var(--on);font-weight:700;color:var(--dim)}
+.ph .btns{gap:8px;align-items:center}
+.chip:disabled,.btn:disabled{opacity:.4;cursor:not-allowed}
+.kiosk .gear{display:none}.kiosk .dock{width:auto;margin-left:auto;opacity:.6}
+/* Puma launcher */
+.puma{position:fixed;inset:0;z-index:20;background:var(--page);color:var(--tx);overflow:hidden}
+.lk{position:absolute;inset:0;display:flex;flex-direction:column;--s:min(calc(var(--vw)*62),calc(var(--vh)*44))}
+.lk-h,.lk-m{font:800 var(--s)/.8 var(--f-display);letter-spacing:-.07em;white-space:nowrap;font-variant-numeric:tabular-nums}
+.lk-h{flex:none;height:calc(var(--s)*.9);overflow:hidden;padding:max(14px,env(safe-area-inset-top,0px)) 0 0 .03em;color:var(--tx)}
+.lk-m{flex:1;min-height:0;overflow:hidden;background:var(--orange);color:var(--ink);padding:.03em 0 0 .03em;border-radius:calc(var(--r)*1.2) calc(var(--r)*1.2) 0 0}
+.lk-info{display:flex;flex-direction:column;gap:2px;background:var(--sky);color:var(--ink);margin-top:calc(var(--r)*-1);padding:calc(var(--r) + 8px) 20px 26px;border-radius:calc(var(--r)*1.2) calc(var(--r)*1.2) 0 0;font-weight:700;position:relative}
+.lk-n{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lk-up{border:0;background:var(--lime);color:var(--ink);font:800 clamp(20px,calc(var(--vw)*5),30px)/1 var(--f-display);letter-spacing:-.03em;padding:calc(var(--r) + 14px) 20px calc(20px + env(safe-area-inset-bottom,0px));margin-top:calc(var(--r)*-1);border-radius:calc(var(--r)*1.2) calc(var(--r)*1.2) 0 0;text-align:left;cursor:grab;touch-action:none;position:relative;transition:transform .25s}
+.hm{position:absolute;inset:0;display:flex;flex-direction:column}
+.hm-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:max(14px,env(safe-area-inset-top,0px)) 18px 12px}
+.hm-logo{font:800 30px var(--f-display);letter-spacing:-.05em}
+.hm-top .iconbtn{border-color:var(--tx);color:var(--tx)}
+.drs{flex:1;min-height:0;display:flex;flex-direction:column;overflow:auto}
+.dr{flex:none;background:var(--sc);color:var(--ink);--on:var(--ink);--dim:color-mix(in srgb,var(--ink) 66%,transparent);border-radius:calc(var(--r)*1.2) calc(var(--r)*1.2) 0 0;position:relative}
+.dr+.dr{margin-top:calc(var(--r)*-1)}
+.stage[data-theme=frosted] .dr{border:3px solid var(--ink)}
+.dr-h{width:100%;display:flex;align-items:baseline;justify-content:space-between;gap:12px;border:0;background:none;cursor:pointer;text-align:left;padding:calc(var(--r) + 6px) 20px 10px;font:800 clamp(44px,calc(var(--vw)*12),88px)/.85 var(--f-display);letter-spacing:-.06em;color:var(--ink)}
+.dr:first-child .dr-h{padding-top:18px}
+.dr-h small{font:700 14px var(--f-mono);letter-spacing:0}
+.dr-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s}
+.dr.open .dr-b{grid-template-rows:1fr}
+.dr-g{overflow:hidden;min-height:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:0 18px}
+.dr.open .dr-g{padding-bottom:30px}
+.dr:not(.open) .dr-g{visibility:hidden}
+.dr:last-child{padding-bottom:env(safe-area-inset-bottom,0px)}
+.app{display:flex;align-items:center;gap:10px;border:3px solid var(--ink);background:transparent;border-radius:calc(var(--r)*.6);padding:10px 12px;cursor:pointer;font-weight:700;text-align:left;color:var(--ink)}
+.app:hover,.app:focus-visible{background:var(--ink);color:var(--sc)}
+.app i,.lt{flex:none;width:36px;height:36px;display:grid;place-items:center;font:800 20px var(--f-display);font-style:normal;border-radius:10px;background:var(--ink);color:var(--sc)}
+.app:hover i{background:var(--sc);color:var(--ink)}
+.app svg,.mk svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ap{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--sc);color:var(--ink);--on:var(--ink);--dim:color-mix(in srgb,var(--ink) 66%,transparent)}
+.ap-top{display:flex;align-items:center;gap:14px;padding:max(14px,env(safe-area-inset-top,0px)) 18px 8px}
+.ap-top h1{margin:0;font:800 clamp(40px,calc(var(--vw)*10),72px)/.9 var(--f-display);letter-spacing:-.06em}
+.ap-body{flex:1;min-height:0;overflow:auto;padding:12px 18px calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px}
+.big-num{font:800 clamp(64px,calc(var(--vw)*22),200px)/.85 var(--f-display);letter-spacing:-.06em;font-variant-numeric:tabular-nums}
+.bignum.big{font-size:min(calc(var(--vw)*56),calc(var(--vh)*30))}
+.hours.show{display:grid}
+.laps{margin:0;padding-left:1.4em;font:600 14px var(--f-mono)}
+.al .al-t{font:800 28px var(--f-display);letter-spacing:-.03em}
+.mk li{gap:12px}.mk li span{display:flex;flex-direction:column}
+.cam{position:relative;flex:1;min-height:240px;border-radius:calc(var(--r)*.6);background:var(--ink);overflow:hidden;display:grid;place-items:center;color:var(--cream)}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam .note{position:relative;color:var(--cream)}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.gal-i{aspect-ratio:1;border:3px solid var(--ink);border-radius:calc(var(--r)*.4);background:var(--ink) center/cover;cursor:pointer;padding:0}
+.gal-v{flex:1;min-height:240px;border-radius:calc(var(--r)*.6);background:var(--ink) center/contain no-repeat}
+.pin-dots{display:flex;gap:12px;justify-content:center;padding:6px 0}
+.pin-dots i{width:18px;height:18px;border-radius:50%;border:3px solid var(--on)}
+.pin-dots i.on{background:var(--on)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pk{height:64px;border:3px solid var(--on);background:transparent;border-radius:calc(var(--r)*.6);font:800 28px var(--f-display);cursor:pointer;color:inherit}
+.pk:hover,.pk:active{background:var(--on);color:var(--sc)}
+.pk svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2.6}
+@media (prefers-reduced-motion:reduce){.gear,.sw::before,.board{transition:none}}
+
+/* device frame and responsive breakpoints (set from JS as data-bp on the stage) */
+#dwrap{min-height:100vh;min-height:100dvh;display:flex}
+#device{position:relative;width:100%;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+#dwrap.fixed{position:fixed;inset:0;min-height:0;overflow:hidden;background:#0e0e0e}
+#device.fixed{position:absolute;left:50%;top:50%;width:var(--dw);height:var(--dh);min-height:0;overflow:hidden;flex:none;transform-origin:center}
+#device.framed{outline:10px solid #000;border-radius:var(--rr)}
+#device.fixed .stage{height:100%;min-height:0;overflow:auto}
+.stage{flex:1}
+.stage[data-bp=tablet] .board{grid-template-columns:repeat(8,minmax(0,1fr))}
+.stage[data-bp=tablet] .sz-large{grid-column:span 8}
+.stage[data-bp=phone] .board{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stage[data-bp=phone] .sz-small{grid-column:span 1;grid-row:span 2}
+.stage[data-bp=phone] .sz-regular{grid-column:span 2;grid-row:span 3}
+.stage[data-bp=phone] .sz-large{grid-column:span 2;grid-row:span 4}
+.stage[data-bp=phone] .srow{grid-template-columns:1fr 44px}.stage[data-bp=phone] .srow .lbl{grid-column:1/-1}
+.dr:not(:last-child){padding-bottom:var(--r)}
+.dr:last-child{flex:1 0 auto}
+.stage[data-short]{padding-block:8px;padding-inline:8px}
+.stage[data-short] .board{gap:8px;grid-auto-rows:78px}
+.stage[data-short] .dr-h{font-size:34px;padding-top:calc(var(--r) + 2px)}
+.stage[data-short] .dr:first-child .dr-h{padding-top:10px}
+.stage[data-short] .ap-top h1{font-size:34px}
+.stage[data-short] .hm-top,.stage[data-short] .ap-top{padding-top:10px;padding-bottom:4px}
+.stage[data-short] .big-num{font-size:min(calc(var(--vw)*18),calc(var(--vh)*40))}
+/* more colour themes */
+.stage[data-theme=grape]{--page:var(--lilac)}.stage[data-theme=citrus]{--page:var(--lime)}.stage[data-theme=ocean]{--page:var(--sky)}.stage[data-theme=blush]{--page:#FFD9CF}
+.stage:is([data-theme=frosted],[data-theme=grape],[data-theme=citrus],[data-theme=ocean],[data-theme=blush]) :is(.slot,.dock,.sheet,.dr){border:3px solid var(--ink)}
+:root:has(.stage[data-theme=grape]){background:var(--lilac)}:root:has(.stage[data-theme=citrus]){background:var(--lime)}:root:has(.stage[data-theme=ocean]){background:var(--sky)}:root:has(.stage[data-theme=blush]){background:#FFD9CF}
+/* glass themes */
+:root{--tint:#8a5cf6}
+.stage:is([data-theme=glass],[data-theme=stained]){--tx:#f3f6fb;--ink:#f3f6fb;--paper:rgba(22,30,48,.62);--dockbg:rgba(255,255,255,.14);--dockfg:#fff;--on-e:#f3f6fb;--c-e:rgba(255,255,255,.16);color-scheme:dark}
+.stage[data-theme=glass]{--orange:rgba(255,160,110,.24);--lilac:rgba(190,170,255,.24);--lime:rgba(200,255,120,.2);--sky:rgba(120,210,255,.24);--glassbg:radial-gradient(circle at 18% 12%,#3f74dd 0,transparent 46%),radial-gradient(circle at 88% 28%,#a24fd6 0,transparent 42%),radial-gradient(circle at 42% 92%,#15b3a8 0,transparent 46%),#0b1220}
+.stage[data-theme=stained]{--orange:color-mix(in srgb,var(--tint) 52%,transparent);--lilac:color-mix(in srgb,var(--tint) 38%,transparent);--lime:color-mix(in srgb,var(--tint) 46%,transparent);--sky:color-mix(in srgb,var(--tint) 32%,transparent);--glassbg:radial-gradient(circle at 18% 12%,color-mix(in srgb,var(--tint) 80%,#fff) 0,transparent 48%),radial-gradient(circle at 88% 30%,var(--tint) 0,transparent 44%),radial-gradient(circle at 40% 95%,color-mix(in srgb,var(--tint) 65%,#000) 0,transparent 48%),color-mix(in srgb,var(--tint) 22%,#05070c)}
+.stage:is([data-theme=glass],[data-theme=stained]){background:var(--glassbg)}
+.stage:is([data-theme=glass],[data-theme=stained]) .puma{background:var(--glassbg)}
+.stage:is([data-theme=glass],[data-theme=stained]) :is(.slot,.dock,.sheet,.dr,.toast,.lk-m,.lk-info,.lk-up){backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);border:1px solid rgba(255,255,255,.3)}
+.stage[data-theme=stained] :is(.slot,.dock,.sheet,.dr,.lk-m,.lk-info,.lk-up){border:3px solid #0b0b0b;box-shadow:inset 0 0 36px rgba(255,255,255,.16)}
+:root:has(.stage[data-theme=glass]){background:#0b1220}:root:has(.stage[data-theme=stained]){background:#05070c}
+.stage select.field option{color:#141414;background:#F3F0E8}
+input[type=color].cp{height:48px;padding:4px;cursor:pointer}
+.boot{position:fixed;inset:0;z-index:80;background:#000;display:grid;place-content:center;justify-items:center;gap:26px;transition:transform .55s cubic-bezier(.7,0,.3,1)}
+.boot.out{transform:translateY(-100%)}
+.bt-logo{display:flex;font:800 min(calc(var(--vw)*26),calc(var(--vh)*30),200px)/.85 var(--f-display);letter-spacing:-.06em}
+.bt-logo span{display:inline-block;color:var(--c);animation:bt-b .8s cubic-bezier(.3,1.3,.5,1) var(--d) both}
+.bt-bar{width:min(calc(var(--vw)*50),320px);height:10px;border-radius:5px;background:#222;overflow:hidden}
+.bt-bar i{display:block;height:100%;background:#DFFF5E;transform-origin:left;animation:bt-f 1s ease-in-out 1.25s both}
+@keyframes bt-b{0%{transform:translateY(70px) scale(.7);opacity:0}45%{transform:translateY(-36px) scale(1.06);opacity:1}72%{transform:translateY(10px)}100%{transform:none;opacity:1}}
+@keyframes bt-f{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.boot *{animation:none!important}.boot{transition:none}}
+.ly-msgs{flex:1;min-height:240px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.ly-m{max-width:88%;padding:10px 14px;border-radius:calc(var(--r)*.6);white-space:pre-wrap;overflow-wrap:anywhere;font-weight:500}
+.ly-m.me{align-self:flex-end;background:var(--on);color:var(--sc)}
+.ly-m.ai{align-self:flex-start;border:2px solid var(--on)}
+.ly-m.err{border-style:dashed}
+details.ly-set{border:2px solid var(--on);border-radius:calc(var(--r)*.6);padding:10px 14px;display:flex;flex-direction:column;gap:10px}
+details.ly-set summary{cursor:pointer;font-weight:700}
+.acc-f{display:flex;flex-direction:column;gap:10px}
+textarea.field{resize:vertical}
+.pw{position:absolute;inset:0}
+.pw-frame{width:100%;height:100%;border:0;background:transparent;border-radius:var(--r);color-scheme:normal}
+.pkg-frame{flex:1;min-height:360px;width:100%;border:3px solid var(--on);border-radius:calc(var(--r)*.5);background:#fff}
+.off{position:absolute;inset:0;background:#000;display:grid;place-content:center;justify-items:center;gap:14px;color:#8a8a8a}
+.off p{margin:0;font-weight:700}
+.off-b{width:84px;height:84px;border-radius:50%;border:3px solid #555;background:transparent;color:#aaa;cursor:pointer;display:grid;place-items:center}
+.off-b svg{width:38px;height:38px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+/* night mode: black page, grey slabs, light grey text */
+.stage[data-night]{--ink:#cfcfcf;--page:#000;--paper:#1b1b1b;--tx:#cfcfcf;--dockbg:#1b1b1b;--dockfg:#cfcfcf;--on-e:#cfcfcf;--c-e:#222;--orange:#303030;--lilac:#2a2a2a;--lime:#353535;--sky:#262626}
+:root:has(.stage[data-night]){background:#000}
+.stage[data-night][data-theme]{background:#000}.stage[data-night] .puma{background:#000}
+/* dock */
+.dock{gap:10px;padding:10px}
+.dockbtn{flex:1;width:auto;height:60px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:16px;letter-spacing:-.02em}
+.dockbtn .di{display:grid;place-items:center}
+.kiosk .dock{opacity:.85}
+.hm-r{display:flex;gap:8px}
+.kiosk .dockbtn{flex:none;padding:0 28px}
+.hm-ann{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:0 18px 12px;padding:10px 14px;border:3px solid var(--ink);border-radius:calc(var(--r)*.6);background:var(--lime);color:var(--ink);--on:var(--ink);--sc:var(--lime);font-weight:700}
+.hm-ann span{flex:1;min-width:160px}
+.ann{display:flex;flex-direction:column;gap:2px;padding:14px;border:2px solid var(--on);border-radius:calc(var(--r)*.6)}
+.ann b{font:800 20px var(--f-display);letter-spacing:-.03em}.ann span{color:var(--dim)}
+.rn{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+a.btn{text-decoration:none;display:inline-block}
+.ap .mp-frame{min-height:320px}
+.ap .fact-t{font-size:clamp(28px,calc(var(--vw)*7),64px);min-height:160px}
+.ap .nt{flex:1;display:flex;min-height:240px}
+.cal-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cal-h b{font:800 clamp(26px,calc(var(--vw)*6),44px)/1 var(--f-display);letter-spacing:-.04em}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;font-weight:700}
+.cal i{font-style:normal;color:var(--dim);font-size:12px;letter-spacing:.1em}
+.cal-d{aspect-ratio:1;display:grid;place-items:center;border-radius:calc(var(--r)*.4);border:2px solid color-mix(in srgb,var(--on) 25%,transparent)}
+.cal-d.today{background:var(--on);color:var(--sc);border-color:var(--on)}
+.calc-d{font:800 clamp(56px,calc(var(--vw)*16),120px)/1 var(--f-display);letter-spacing:-.05em;text-align:right;overflow:hidden;white-space:nowrap;font-variant-numeric:tabular-nums}
+.calc{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ck{height:clamp(52px,calc(var(--vh)*8),76px);border:3px solid var(--on);background:transparent;border-radius:calc(var(--r)*.6);font:800 24px var(--f-display);cursor:pointer;color:inherit}
+.ck:hover,.ck:active,.ck.op{background:var(--on);color:var(--sc)}
+.logo{display:flex;flex-direction:column;align-items:center;padding:18px 0 4px;text-align:center;line-height:.9}
+.logo b{font:800 60px/.85 var(--f-display);letter-spacing:-.07em}
+.logo span{font:800 40px/1 var(--f-display);letter-spacing:-.05em}
+</style>
+
+<div id="dwrap"><div id="device">
+<div class="stage" id="stage" data-theme="plain" data-set="dusk">
+  <img class="wall" id="wall" alt="" decoding="async">
+  <main class="board" id="board" aria-label="Smart home hub"></main>
+  <div class="boot" id="boot" hidden aria-hidden="true"></div>
+  <div class="puma" id="puma" hidden></div>
+  <div class="scrim" id="scrim" hidden></div>
+  <div class="toast" id="toast" data-glass="99" role="status" hidden></div>
+</div></div></div>
+<input type="file" id="wallFile" accept="image/*" hidden>
+<input type="file" id="openFile" hidden>
+<input type="file" id="accFile" accept=".account,.json" hidden>
+<input type="file" id="ppkFile" accept=".ppk,.pwg,.zip" hidden>
+<input type="file" id="paccFile" accept=".pacc,.zip" hidden>
+<input type="file" id="photoFile" accept="image/*" multiple hidden>
+
+<script type="module">
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const num = (v, d) => (isFinite(parseFloat(v)) ? parseFloat(v) : d);
+const fmt = (s) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+
+const KEY = "smrt-hub-v1";
+const THEMES = ["plain", "dark", "frosted", "grape", "citrus", "ocean", "blush", "glass", "stained"];
+const PRESETS = ["dusk", "aurora", "lagoon"];
+const THEME_NAMES = { plain: "Light", dark: "Dark", frosted: "Poster", grape: "Grape", citrus: "Citrus", ocean: "Ocean", blush: "Blush", glass: "Glass", stained: "Stained glass" };
+const PRESET_NAMES = { dusk: "Orange", aurora: "Lime", lagoon: "Sky" };
+const COND = ["Clear", "Partly cloudy", "Cloudy", "Rain", "Storm", "Snow", "Fog"];
+const COND_ICON = { Clear: "sun", "Partly cloudy": "partly", Cloudy: "cloud", Rain: "rain", Storm: "storm", Snow: "snow", Fog: "fog" };
+const BLUR = { plain: 0, dark: 1, frosted: 7 };
+const SLOTS = { a: "Tile 1", b: "Tile 2", c: "Tile 3", d: "Tile 4", e: "Tile 5", f: "Tile 6", g: "Tile 7", h: "Tile 8" };
+for (let i = 1; i <= 9; i++) SLOTS["x" + i] = "Extra " + i;
+const SZ = { small: "Small", regular: "Regular", large: "Large" };
+const vis = () => Object.keys(SLOTS).filter((k) => (k[0] === "x" ? +k.slice(1) <= state.extra : state.exp.more || "abcde".includes(k)));
+const TYPES = {
+  weather: { name: "Weather", desc: "Temperature in °C with a short outlook.", icon: "sun" },
+  news: { name: "News", desc: "Live top stories from Hacker News.", icon: "note" },
+  todo: { name: "Todo list", desc: "Tick off tasks, add new ones.", icon: "check" },
+  device: { name: "Device info", desc: "Connection, screen and system details.", icon: "wifi" },
+  search: { name: "Search", desc: "A search bar that opens Google.", icon: "search" },
+  clock: { name: "Clock", desc: "Time and date, 24 or 12 hour.", icon: "clock" },
+  notes: { name: "Notes", desc: "A scratchpad that saves with your page.", icon: "note" },
+  maps: { name: "Map", desc: "OpenStreetMap with place search.", icon: "pin" },
+  facts: { name: "Fun facts", desc: "Random facts and what happened today.", icon: "bulb" },
+  photos: { name: "Photos", desc: "A slideshow of pictures you add.", icon: "image" },
+  debug: { name: "Debug", desc: "Live diagnostics for this page.", icon: "alert" },
+};
+const typeList = () => Object.entries(TYPES).filter(([k]) => k !== "debug" || state.exp.debug);
+const DEVS = { auto: { n: "Auto" }, iphone17pro: { n: "iPhone 17 Pro", w: 402, h: 874, r: 52 }, ipadmini: { n: "iPad mini (A17 Pro)", w: 744, h: 1133, r: 30 }, echoshow5: { n: "Echo Show 5", w: 960, h: 480, r: 14 } };
+const WEB = { google: { n: "Google", u: "https://www.google.com" }, spotify: { n: "Spotify", u: "https://open.spotify.com" }, claude: { n: "Claude", u: "https://claude.ai" }, disney: { n: "Disney+", u: "https://www.disneyplus.com" }, youtube: { n: "YouTube", u: "https://www.youtube.com" }, netflix: { n: "Netflix", u: "https://www.netflix.com" }, gmail: { n: "Gmail", u: "https://mail.google.com" }, gmaps: { n: "Google Maps", u: "https://maps.google.com" }, wiki: { n: "Wikipedia", u: "https://www.wikipedia.org" }, github: { n: "GitHub", u: "https://github.com" }, twitch: { n: "Twitch", u: "https://www.twitch.tv" }, reddit: { n: "Reddit", u: "https://www.reddit.com" } };
+const APPS = { news: { n: "News", i: "note", d: "info" }, weather: { n: "Weather", i: "sun", d: "info" }, clock: { n: "Clock", i: "clock", d: "info" }, camera: { n: "Camera", i: "camera", d: "make" }, gallery: { n: "Photos", i: "image", d: "make" }, display: { n: "Display Mode", i: "display", d: "system" }, market: { n: "Marketplace", i: "widgets", d: "system" }, settings: { n: "Settings", i: "sliders", d: "system" }, calendar: { n: "Calendar", i: "calendar", d: "info" }, maps: { n: "Maps", i: "pin", d: "info" }, facts: { n: "Fun facts", i: "bulb", d: "info" }, notes: { n: "Notes", i: "note", d: "make" }, todo: { n: "Tasks", i: "check", d: "make" }, calc: { n: "Calculator", i: "calc", d: "make" }, shutdown: { n: "Shut down", i: "power", d: "system" }, lynk: { n: "Lynk", i: "chat", d: "make" } };
+
+const P = {
+  sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  widgets: '<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>',
+  upload: '<path d="M12 15V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+  download: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  partly: '<path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4"/><path d="M16 12a4 4 0 0 0-7.7-1.5"/><path d="M17.5 21H9a4.5 4.5 0 1 1 1.1-8.9A5.5 5.5 0 0 1 20 14.5a3.3 3.3 0 0 1-2.5 6.5z"/>',
+  cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/>',
+  rain: '<path d="M17.5 15H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/><path d="M8 19v2M12 19v2M16 19v2"/>',
+  storm: '<path d="M17.5 14H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/><path d="m12 13-2 4h4l-2 4"/>',
+  snow: '<path d="M17.5 14H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/><path d="M8 18h.01M12 18h.01M16 18h.01M10 21h.01M14 21h.01"/>',
+  fog: '<path d="M4 8h16M2 12h20M5 16h14M8 20h8"/>',
+  play: '<path d="M7 4.5v15l12-7.5z"/>',
+  pause: '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
+  prev: '<path d="M19 5v14L8 12z"/><path d="M5 5v14"/>',
+  next: '<path d="M5 5v14l11-7z"/><path d="M19 5v14"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  wifi: '<path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><path d="M2 9a14 14 0 0 1 20 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  note: '<rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/>',
+  alert: '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5h.01"/>',
+  pin: '<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  calc: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/>',
+  power: '<path d="M12 3v9"/><path d="M6.3 7a8 8 0 1 0 11.4 0"/>',
+  exit: '<path d="M10 4H5v16h5"/><path d="m15 8 4 4-4 4M19 12H9"/>',
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  display: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  home: '<path d="M4 11 12 4l8 7v9H4z"/>',
+  back: '<path d="m15 5-7 7 7 7"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+  dots: '<circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/>',
+};
+const ic = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || ""}</svg>`;
+
+/* ---------- state ---------- */
+const defaults = () => ({
+  format: "smrtpage", version: 1, theme: "plain", radius: 28, refraction: 22, wall: { id: "dusk" }, exp: { more: false, debug: false, live: true },
+  slots: { a: "weather", b: "news", c: "todo", d: "device", e: "search", f: "clock", g: "notes", h: "news", x1: "facts", x2: "photos", x3: "maps", x4: "clock", x5: "notes", x6: "news", x7: "todo", x8: "weather", x9: "device" },
+  sizes: { a: "regular", b: "regular", c: "regular", d: "large", e: "regular", f: "small", g: "regular", h: "regular", x1: "regular", x2: "regular", x3: "regular", x4: "small", x5: "regular", x6: "regular", x7: "regular", x8: "regular", x9: "regular" },
+  extra: 0,
+  device: "auto",
+  night: false,
+  tint: "#8a5cf6",
+  puma: { apps: ["google", "spotify", "claude", "disney"], dm: false, pin: null, alarms: [], ann: false, pkgs: [], pwgs: [], wdg: [], gate: false, lynk: { url: "http://localhost:11434", model: "llama3.2:1b" } },
+  data: {
+    weather: { city: "London", temp: 14, cond: "Cloudy", hi: 16, lo: 9, lat: null, lon: null },
+    music: { i: 0, tracks: [
+      { t: "Slow Hours", a: "Marlow & Pine", d: 222 }, { t: "Glass Harbour", a: "Ivory Static", d: 245 },
+      { t: "Night Bus Home", a: "Tamsin Hale", d: 198 }, { t: "Low Sun", a: "The Quiet Rooms", d: 301 } ] },
+    todo: [
+      { id: "t1", t: "Replace the hallway bulb", done: false }, { id: "t2", t: "Order oat milk", done: true },
+      { id: "t3", t: "Water the ferns", done: false }, { id: "t4", t: "Update router firmware", done: false } ],
+    clock: { h24: true },
+    controls: { living: true, kitchen: false, porch: true, lock: true, heat: 21 },
+    notes: "",
+    maps: { label: "", lat: null, lon: null },
+  },
+});
+
+function sanitize(o) {
+  const d = defaults();
+  if (!o || typeof o !== "object") return d;
+  if (THEMES.includes(o.theme)) d.theme = o.theme;
+  d.radius = clamp(num(o.radius, d.radius), 8, 48);
+  d.refraction = clamp(num(o.refraction, d.refraction), 0, 40);
+  if (o.wall && typeof o.wall === "object") {
+    if (PRESETS.includes(o.wall.id)) d.wall = { id: o.wall.id };
+    else if (o.wall.id === "custom" && typeof o.wall.url === "string" && /^data:image\/(jpeg|png|webp|gif);base64,/.test(o.wall.url)) d.wall = { id: "custom", url: o.wall.url };
+  }
+  if (o.slots && typeof o.slots === "object") for (const k in SLOTS) { const v = o.slots[k] === "music" ? "news" : o.slots[k]; if (TYPES[v] || /^pw:[a-z0-9._-]{1,40}:[a-z0-9._-]{1,40}$/.test(v)) d.slots[k] = v; }
+  d.extra = clamp(Math.floor(num(o.extra, 0)), 0, 9);
+  if (DEVS[o.device]) d.device = o.device;
+  d.night = !!o.night;
+  if (typeof o.tint === "string" && /^#[0-9a-fA-F]{6}$/.test(o.tint)) d.tint = o.tint;
+  if (o.sizes && typeof o.sizes === "object") for (const k in SLOTS) if (SZ[o.sizes[k]]) d.sizes[k] = o.sizes[k];
+  if (o.puma && typeof o.puma === "object") {
+    const p = o.puma; d.puma.dm = !!p.dm; d.puma.ann = !!p.ann; d.puma.gate = !!p.gate;
+    if (Array.isArray(p.pwgs)) d.puma.pwgs = p.pwgs.slice(0, 30).filter((k) => k && /^[a-z0-9._-]{1,40}$/.test(k.id)).map((k) => ({ id: k.id, name: String(k.name || k.id).slice(0, 40), version: String(k.version || "").slice(0, 20), author: String(k.author || "").slice(0, 40), app: /^[a-z0-9._-]{1,40}$/.test(k.app) ? k.app : k.id }));
+    if (Array.isArray(p.wdg)) d.puma.wdg = p.wdg.slice(0, 60).filter((w) => w && /^[a-z0-9._-]{1,40}:[a-z0-9._-]{1,40}$/.test(w.id) && (w.src === "pkg" || w.src === "wgt") && /^[a-z0-9._-]{1,40}$/.test(w.pid) && /^[a-z0-9._-]{1,40}$/.test(w.app)).map((w) => ({ id: w.id, wid: String(w.wid || "").slice(0, 40), pid: w.pid, src: w.src, app: w.app, appName: String(w.appName || w.app).slice(0, 40), version: String(w.version || "").slice(0, 20), name: String(w.name || w.id).slice(0, 40), entry: String(w.entry || "").slice(0, 120), css: String(w.css || "").slice(0, 120), size: SZ[w.size] ? w.size : "regular" }));
+    if (p.lynk && typeof p.lynk === "object") { if (/^https?:\/\/[^\s]{1,100}$/.test(p.lynk.url)) d.puma.lynk.url = p.lynk.url; if (/^[\w.:\/-]{1,60}$/.test(p.lynk.model)) d.puma.lynk.model = p.lynk.model; }
+    if (Array.isArray(p.pkgs)) d.puma.pkgs = p.pkgs.slice(0, 30).filter((k) => k && /^[a-z0-9._-]{1,40}$/.test(k.id)).map((k) => ({ id: k.id, name: String(k.name || k.id).slice(0, 40), version: String(k.version || "").slice(0, 20), author: String(k.author || "").slice(0, 40), desc: String(k.desc || "").slice(0, 160), entry: String(k.entry || "index.html").slice(0, 120) }));
+    if (Array.isArray(p.apps)) d.puma.apps = p.apps.filter((k, i, a) => (WEB[k] || k === "lynk") && a.indexOf(k) === i);
+    if (p.pin && /^[0-9a-f]{8}$/.test(p.pin.s) && /^[0-9a-f]{8,64}$/.test(p.pin.h)) d.puma.pin = { s: p.pin.s, h: p.pin.h };
+    if (Array.isArray(p.alarms)) d.puma.alarms = p.alarms.slice(0, 20).filter((a) => a && /^\d{2}:\d{2}$/.test(a.t)).map((a, i) => ({ id: String(a.id || "a" + i).slice(0, 20), t: a.t, l: String(a.l || "").slice(0, 30), on: a.on !== false }));
+  }
+  if (o.exp && typeof o.exp === "object") d.exp = { more: !!o.exp.more, debug: !!o.exp.debug, live: true };
+  const x = o.data && typeof o.data === "object" ? o.data : {};
+  if (x.weather && typeof x.weather === "object") {
+    const w = x.weather, b = d.data.weather;
+    d.data.weather = { city: String(w.city || "").slice(0, 40) || b.city, temp: clamp(num(w.temp, b.temp), -60, 60), cond: COND.includes(w.cond) ? w.cond : b.cond, hi: clamp(num(w.hi, b.hi), -60, 60), lo: clamp(num(w.lo, b.lo), -60, 60), lat: typeof w.lat === "number" ? clamp(w.lat, -90, 90) : null, lon: typeof w.lon === "number" ? clamp(w.lon, -180, 180) : null };
+  }
+  if (x.music && Array.isArray(x.music.tracks)) {
+    const tr = x.music.tracks.slice(0, 30).filter((t) => t && typeof t.t === "string").map((t) => ({ t: t.t.slice(0, 60), a: String(t.a || "Unknown artist").slice(0, 60), d: clamp(num(t.d, 210), 30, 3600) }));
+    if (tr.length) d.data.music = { tracks: tr, i: clamp(Math.floor(num(x.music.i, 0)), 0, tr.length - 1) };
+  }
+  if (Array.isArray(x.todo)) d.data.todo = x.todo.slice(0, 60).filter((t) => t && typeof t.t === "string").map((t, i) => ({ id: String(t.id || "i" + i).slice(0, 20), t: t.t.slice(0, 120), done: !!t.done }));
+  if (x.clock && typeof x.clock === "object") d.data.clock.h24 = x.clock.h24 !== false;
+  if (x.controls && typeof x.controls === "object") {
+    const c = x.controls, b = d.data.controls;
+    for (const k of ["living", "kitchen", "porch", "lock"]) if (typeof c[k] === "boolean") b[k] = c[k];
+    b.heat = clamp(num(c.heat, b.heat), 14, 28);
+  }
+  if (x.maps && typeof x.maps === "object") { const m = x.maps; d.data.maps = { label: String(m.label || "").slice(0, 60), lat: typeof m.lat === "number" ? clamp(m.lat, -90, 90) : null, lon: typeof m.lon === "number" ? clamp(m.lon, -180, 180) : null }; }
+  if (typeof x.notes === "string") d.data.notes = x.notes.slice(0, 4000);
+  return d;
+}
+
+let state;
+try { state = sanitize(JSON.parse(localStorage.getItem(KEY) || "null")); } catch { state = defaults(); }
+let pt;
+function persist() {
+  clearTimeout(pt);
+  pt = setTimeout(() => {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch { try { const s = JSON.parse(JSON.stringify(state)); if (s.wall.id === "custom") s.wall = { id: "dusk" }; localStorage.setItem(KEY, JSON.stringify(s)); } catch {} }
+  }, 250);
+}
+
+/* ---------- photo backdrop (optional, shows between slabs) ---------- */
+function fileToWall(file) {
+  return new Promise((res, rej) => {
+    if (!/^image\//.test(file.type)) return rej(new Error("That file is not an image."));
+    const fr = new FileReader();
+    fr.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const s = Math.min(1, 1920 / Math.max(im.width, im.height)), cv = document.createElement("canvas");
+        cv.width = Math.max(1, Math.round(im.width * s)); cv.height = Math.max(1, Math.round(im.height * s));
+        cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+        res(cv.toDataURL("image/jpeg", 0.86));
+      };
+      im.onerror = () => rej(new Error("Could not read that image."));
+      im.src = fr.result;
+    };
+    fr.onerror = () => rej(new Error("Could not read that file."));
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ---------- widgets ---------- */
+const stage = $("#stage"), board = $("#board"), wall = $("#wall"), scrim = $("#scrim");
+const mu = { playing: false, pos: 0 };
+const curTrack = () => { const m = state.data.music; return m.tracks[m.i % m.tracks.length]; };
+const hueOf = () => (state.data.music.i * 67 + 210) % 360;
+let batt = null;
+
+function devInfo() {
+  const n = navigator, c = n.connection || n.mozConnection || n.webkitConnection || {};
+  const rows = {
+    net: [["Status", n.onLine ? "Online" : "Offline"], ["Connection", c.type || c.effectiveType || "—"], ["Downlink", c.downlink ? c.downlink + " Mbps" : "—"], ["Round trip", c.rtt != null ? c.rtt + " ms" : "—"], ["Data saver", c.saveData ? "On" : "Off"]],
+    disp: [["Screen", `${screen.width} × ${screen.height}`], ["Viewport", `${innerWidth} × ${innerHeight}`], ["Pixel ratio", devicePixelRatio + "×"], ["Orientation", (screen.orientation?.type || "—").replace("-", " ")]],
+    sys: [["Platform", n.userAgentData?.platform || n.platform || "—"], ["CPU threads", n.hardwareConcurrency || "—"], ["Memory", n.deviceMemory ? "≥ " + n.deviceMemory + " GB" : "—"], ["Language", n.language || "—"], ["Time zone", Intl.DateTimeFormat().resolvedOptions().timeZone || "—"]],
+  };
+  if (batt) rows.bat = [["Level", Math.round(batt.level * 100) + "%"], ["Charging", batt.charging ? "Yes" : "No"]];
+  return { rows, c, online: n.onLine };
+}
+const group = (title, rows) => `<div><h4 class="eyebrow">${title}</h4><dl>${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl></div>`;
+const clockText = () => {
+  const d = new Date(), h12 = !state.data.clock.h24;
+  return { t: d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: h12 }), d: d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) };
+};
+
+const wx = { status: "Entered by hand", hrs: [] };
+const news = { items: [], err: "" };
+const dbg = { lines: [], fps: 0, log(m) { this.lines.push(new Date().toLocaleTimeString() + " " + m); if (this.lines.length > 40) this.lines.shift(); } };
+const egg = { a: 0, c: 0, n: 0, k: 0, long: false, msg: "Tap to spin. Press and hold for a surprise." };
+const dev = { n: 0 };
+const EGGC = ["#FF6A2B", "#C8B8FF", "#DFFF5E", "#7FD4FF", "#141414"];
+const WMO = (c) => (c === 0 ? "Clear" : c <= 2 ? "Partly cloudy" : c === 3 ? "Cloudy" : c <= 48 ? "Fog" : c <= 67 ? "Rain" : c <= 77 ? "Snow" : c <= 82 ? "Rain" : c <= 86 ? "Snow" : "Storm");
+async function jget(u) { const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }
+async function loadWeather() {
+  const w = state.data.weather;
+  if (!state.exp.live) { wx.status = "Live data off"; renderType("weather"); return; }
+  wx.status = "Updating"; renderType("weather");
+  try {
+    if (w.lat == null || w.lon == null) {
+      const g = await jget("https://geocoding-api.open-meteo.com/v1/search?count=1&name=" + encodeURIComponent(w.city));
+      const p = g.results && g.results[0];
+      if (!p) throw new Error("City not found");
+      w.lat = p.latitude; w.lon = p.longitude; if (p.name) w.city = p.name;
+    }
+    const d = await jget(`https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&current=temperature_2m,weather_code&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min&forecast_days=2&timezone=auto`);
+    w.temp = clamp(Math.round(d.current.temperature_2m), -60, 60); w.cond = WMO(d.current.weather_code);
+    w.hi = Math.round(d.daily.temperature_2m_max[0]); w.lo = Math.round(d.daily.temperature_2m_min[0]);
+    const i0 = Math.max(0, d.hourly.time.findIndex((t) => t >= d.current.time));
+    wx.hrs = [0, 2, 4, 6, 8, 10].map((k) => ({ h: +(d.hourly.time[i0 + k] || "T00").slice(11, 13), t: d.hourly.temperature_2m[i0 + k] ?? w.temp }));
+    wx.status = "Live"; persist(); renderType("maps");
+  } catch (e) { wx.status = "Offline, saved values"; dbg.log("weather: " + e.message); }
+  renderType("weather");
+}
+async function loadNews() {
+  if (!state.exp.live) { news.err = "Live data off"; renderType("news"); return; }
+  try {
+    const d = await jget("https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=12");
+    news.items = d.hits.filter((h) => h.title).map((h) => ({ t: h.title, u: /^https?:\/\//.test(h.url || "") ? h.url : "https://news.ycombinator.com/item?id=" + h.objectID, p: h.points, c: h.num_comments }));
+    news.err = "";
+  } catch (e) { news.err = "Offline"; dbg.log("news: " + e.message); }
+  renderType("news");
+}
+let fr = 0, ft = performance.now();
+(function tick(t) { fr++; if (t - ft >= 1000) { dbg.fps = Math.round((fr * 1000) / (t - ft)); fr = 0; ft = t; if (state.exp.debug) renderType("debug"); } requestAnimationFrame(tick); })(ft);
+
+const FACTS = ["Honey never spoils. Edible honey has been found in ancient Egyptian tombs.", "Octopuses have three hearts.", "Bananas are berries, but strawberries are not.", "A day on Venus is longer than its year.", "Wombat droppings are cube-shaped.", "The Eiffel Tower can grow about 15 cm taller in summer heat.", "Sharks are older than trees.", "Scotland's national animal is the unicorn.", "There are more possible chess games than atoms in the observable universe.", "Lightning strikes Earth roughly 100 times every second."];
+const fact = { k: "Fun fact", t: FACTS[0], pool: [] };
+function nextFact() {
+  const all = [...FACTS.map((t) => ({ k: "Fun fact", t })), ...fact.pool];
+  let n; do { n = all[Math.floor(Math.random() * all.length)]; } while (all.length > 1 && n.t === fact.t);
+  fact.k = n.k; fact.t = n.t; renderType("facts");
+}
+async function loadFacts() {
+  if (!state.exp.live) return;
+  try {
+    const d = new Date(), p = (v) => String(v).padStart(2, "0");
+    const j = await jget(`https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/${p(d.getMonth() + 1)}/${p(d.getDate())}`);
+    fact.pool = (j.events || []).filter((e) => e.text && e.year).slice(0, 40).map((e) => ({ k: "On this day, " + e.year, t: e.text }));
+  } catch (e) { dbg.log("facts: " + e.message); }
+}
+const mapPos = () => {
+  const m = state.data.maps, w = state.data.weather;
+  if (m.lat != null && m.lon != null) return { lat: m.lat, lon: m.lon, label: m.label || "Map" };
+  if (w.lat != null && w.lon != null) return { lat: w.lat, lon: w.lon, label: w.city };
+  return { lat: 51.5074, lon: -0.1278, label: w.city || "London" };
+};
+async function geocodeMap(q) {
+  try {
+    const g = await jget("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(q));
+    if (!g[0]) return note("Couldn't find that place.", "alert");
+    state.data.maps = { label: String(g[0].display_name).split(",").slice(0, 2).join(",").trim().slice(0, 60), lat: clamp(+g[0].lat, -90, 90), lon: clamp(+g[0].lon, -180, 180) };
+    persist(); renderType("maps");
+  } catch (e) { dbg.log("maps: " + e.message); note("Place search needs an internet connection.", "alert"); }
+}
+const PK = "smrt-hub-photos-v1";
+let photos = [], pi = 0;
+try { photos = JSON.parse(localStorage.getItem(PK) || "[]").filter((u) => typeof u === "string" && /^data:image\/jpeg;base64,/.test(u)).slice(0, 12); } catch {}
+const savePhotos = () => { try { localStorage.setItem(PK, JSON.stringify(photos)); } catch { note("Photo storage is full.", "alert"); } };
+function fileToPhoto(f) {
+  return new Promise((res, rej) => {
+    if (!/^image\//.test(f.type)) return rej(new Error("That file is not an image."));
+    const u = URL.createObjectURL(f), im = new Image();
+    im.onload = () => { const k = Math.min(1, 900 / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k)); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); res(c.toDataURL("image/jpeg", 0.72)); };
+    im.onerror = () => { URL.revokeObjectURL(u); rej(new Error("Could not read that image.")); };
+    im.src = u;
+  });
+}
+
+/* ---------- Puma launcher ---------- */
+const ui = { mode: "interface", screen: "lock", app: "", drawer: "web", mk: "apps", gv: -1, cl: "alarm", idle: Date.now(), edit: false };
+const pm = $("#puma"), pad = { buf: "", tries: 0, until: 0 };
+const DCOL = { web: "--orange", info: "--lilac", make: "--lime", system: "--sky", apps: "--orange" };
+const DRAWERS = [["web", "Web"], ["info", "Info"], ["make", "Make"], ["system", "System"]];
+const tm = { left: 300000, run: false, end: 0 }, sw = { run: false, t0: 0, acc: 0, laps: [] };
+const swNow = () => sw.acc + (sw.run ? Date.now() - sw.t0 : 0);
+const p2 = (v) => String(v).padStart(2, "0");
+const fmtT = (ms) => { const q = Math.ceil(ms / 1000); return p2(Math.floor(q / 60)) + ":" + p2(q % 60); };
+const fmtSw = (ms) => p2(Math.floor(ms / 60000)) + ":" + p2(Math.floor(ms / 1000) % 60) + "." + p2(Math.floor(ms / 10) % 100);
+const lockTime = () => { const d = new Date(), h24 = state.data.clock.h24; let h = d.getHours(); if (!h24) h = h % 12 || 12; return { h: h24 ? p2(h) : String(h), m: p2(d.getMinutes()), d: d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) }; };
+let camS = null, camFace = "environment", snooze = null, lastMin = "", beepT, ac;
+
+function renderPuma() {
+  stopCam();
+  if (ui.mode === "off") { pm.hidden = false; board.hidden = true; pm.innerHTML = `<div class="off"><button class="off-b" data-act="power-on" aria-label="Power on">${ic("power")}</button><p>Puma is off</p></div>`; return; }
+  if (ui.mode === "display") { pm.hidden = true; board.hidden = false; return; }
+  pm.hidden = false; board.hidden = true;
+  if (ui.screen === "lock") renderLock(); else if (ui.screen === "home") renderHome(); else renderApp();
+}
+function appRefresh(type) {
+  if (ui.mode !== "interface") return;
+  if (ui.screen === "lock" && (type === "weather" || type === "news")) renderLock();
+  else if (ui.screen === "app" && (ui.app === type || (type === "photos" && ui.app === "gallery"))) renderApp();
+}
+function renderLock() {
+  const k = lockTime(), w = state.data.weather, n = news.items[0];
+  pm.innerHTML = `<div class="lk"><div class="lk-h" data-lk-h>${k.h}</div><div class="lk-m" data-lk-m>${k.m}</div>
+    <div class="lk-info">${acc ? `<span>Hi, ${esc(acc.name)}</span>` : ""}<span>${esc(k.d)}</span><span>${Math.round(w.temp)}°C ${esc(w.cond)} · ${esc(w.city)}</span>${n ? `<span class="lk-n">${esc(n.t)}</span>` : ""}</div>
+    <button class="lk-up" data-act="unlock" aria-label="Unlock. Drag up or press Enter">Push up to unlock</button></div>`;
+}
+const dItems = (id) => [
+  ...(id === "apps" ? state.puma.pkgs.map((k) => ({ k: "pkg:" + k.id, n: k.name, l: k.name[0] })) : []),
+  ...(id === "web" ? state.puma.apps.filter((a) => WEB[a]).map((a) => ({ k: "web:" + a, n: WEB[a].n, l: WEB[a].n[0] })) : []),
+  ...Object.entries(APPS).filter(([k, a]) => a.d === id && (k !== "lynk" || state.puma.apps.includes("lynk"))).map(([k, a]) => ({ k, n: a.n, ic: a.i }))];
+function renderHome() {
+  const k = lockTime();
+  pm.innerHTML = `<div class="hm"><header class="hm-top"><b class="hm-logo">Puma</b><span class="eyebrow" data-hm-t>${k.h}:${k.m}</span><span class="hm-r"><button class="iconbtn" data-act="night" aria-label="${state.night ? "Day mode" : "Night mode"}">${ic(state.night ? "sun" : "moon")}</button><button class="iconbtn" data-act="open-app" data-k="shutdown" aria-label="Shut down">${ic("power")}</button><button class="iconbtn" data-act="lock" aria-label="Lock screen">${ic("lock")}</button></span></header>${state.puma.ann ? "" : `<div class="hm-ann"><span>Coming: Puma for Python and an AI assistant.</span><button class="btn" data-act="ann-read">Details</button><button class="iconbtn" data-act="ann-x" aria-label="Dismiss">${ic("x")}</button></div>`}
+    <div class="drs">${[...DRAWERS, ...(state.puma.pkgs.length ? [["apps", "Apps"]] : [])].map(([id, n]) => { const it = dItems(id), open = ui.drawer === id;
+      return `<section class="dr ${open ? "open" : ""}" style="--sc:var(${DCOL[id]})"><button class="dr-h" data-act="drawer" data-id="${id}" aria-expanded="${open}"><span>${n}</span><small>${it.length}</small></button>
+      <div class="dr-b"><div class="dr-g">${it.map((x) => `<button class="app" data-act="open-app" data-k="${esc(x.k)}"><i>${x.ic ? ic(x.ic) : esc(x.l)}</i><span>${esc(x.n)}</span></button>`).join("")}</div></div></section>`; }).join("")}</div></div>`;
+}
+const hoursHtml = () => { const w = state.data.weather, now = new Date().getHours(); return (wx.hrs.length ? wx.hrs : [0, 1, 2, 1, -1, -2].map((o, i) => ({ h: (now + i * 2) % 24, t: w.temp + o }))).map((x) => `<div>${p2(x.h)}:00<b>${Math.round(x.t)}°</b></div>`).join(""); };
+const segHtml = (act, cur, items) => `<div class="seg" role="radiogroup">${items.map(([k, n]) => `<button role="radio" aria-checked="${cur === k}" data-act="${act}" data-v="${k}">${n}</button>`).join("")}</div>`;
+const lynk = { msgs: [], busy: false, ctl: null, status: "" };
+const lynkErr = (e) => (/fetch|network|load failed/i.test(e.message) ? `Couldn't reach Ollama at ${state.puma.lynk.url}. Check that Ollama is running and that it allows this page (OLLAMA_ORIGINS=*).` : e.message);
+const lynkRender = () => { if (ui.mode === "interface" && ui.screen === "app" && ui.app === "lynk") { renderApp(); const m = $(".ly-msgs"); if (m) m.scrollTop = m.scrollHeight; } };
+async function lynkPing() {
+  const c = state.puma.lynk;
+  try {
+    const r = await fetch(c.url.replace(/\/$/, "") + "/api/tags");
+    if (!r.ok) throw new Error("Ollama returned " + r.status);
+    const j = await r.json(), has = (j.models || []).some((x) => x.name === c.model || x.model === c.model);
+    lynk.status = has ? `Connected. ${c.model} is ready.` : `Connected, but ${c.model} isn't installed. Run: ollama pull ${c.model}`;
+  } catch (e) { lynk.status = lynkErr(e); }
+  const el = $("[data-ly-status]"); if (el) el.textContent = lynk.status;
+}
+async function lynkSend(text) {
+  const c = state.puma.lynk, ai = { r: "assistant", c: "" };
+  lynk.msgs.push({ r: "user", c: text }, ai); lynk.busy = true; lynkRender();
+  try {
+    lynk.ctl = new AbortController();
+    const res = await fetch(c.url.replace(/\/$/, "") + "/api/chat", { method: "POST", signal: lynk.ctl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: c.model, stream: true, messages: [{ role: "system", content: "You are Lynk, a concise, friendly assistant running on a Puma smart hub." }, ...lynk.msgs.slice(0, -1).slice(-20).map((m) => ({ role: m.r, content: m.c }))] }) });
+    if (!res.ok) throw new Error(res.status === 404 ? `The model ${c.model} isn't installed. Run: ollama pull ${c.model}` : "Ollama returned " + res.status);
+    const rd = res.body.getReader(), td = new TextDecoder(); let buf = "";
+    for (;;) {
+      const { done, value } = await rd.read(); if (done) break;
+      buf += td.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!line) continue;
+        const j = JSON.parse(line); if (j.error) throw new Error(j.error);
+        if (j.message?.content) { ai.c += j.message.content; const els = $$(".ly-m.ai"), el = els[els.length - 1]; if (el) { el.textContent = ai.c; el.parentElement.scrollTop = el.parentElement.scrollHeight; } }
+      }
+    }
+  } catch (e) { if (e.name !== "AbortError") ai.err = lynkErr(e); }
+  lynk.busy = false; lynk.ctl = null; lynkRender();
+}
+const calc = { d: "0", acc: null, op: null, fresh: true };
+function calcKey(k) {
+  const c = calc, num = () => parseFloat(c.d);
+  const apply = () => { if (c.op === null || c.acc === null) return num(); const a = c.acc, b = num(); return c.op === "+" ? a + b : c.op === "−" ? a - b : c.op === "×" ? a * b : b === 0 ? NaN : a / b; };
+  const show = (v) => { c.d = Number.isFinite(v) ? String(+v.toPrecision(12)) : "Error"; };
+  if (/^\d$/.test(k)) { c.d = c.fresh || c.d === "0" || c.d === "Error" ? k : c.d.length < 14 ? c.d + k : c.d; c.fresh = false; }
+  else if (k === ".") { if (c.fresh || c.d === "Error") { c.d = "0."; c.fresh = false; } else if (!c.d.includes(".")) c.d += "."; }
+  else if (k === "C") Object.assign(c, { d: "0", acc: null, op: null, fresh: true });
+  else if (k === "±") { if (c.d !== "0" && c.d !== "Error") c.d = c.d.startsWith("-") ? c.d.slice(1) : "-" + c.d; }
+  else if (k === "%") { show(num() / 100); c.fresh = true; }
+  else if (k === "←") { c.d = !c.fresh && c.d.length > 1 && c.d !== "Error" ? c.d.slice(0, -1) : "0"; if (c.d === "-") c.d = "0"; }
+  else if (k === "=") { if (c.op !== null) { show(apply()); c.acc = null; c.op = null; c.fresh = true; } }
+  else { if (c.op !== null && !c.fresh) show(apply()); c.acc = num(); c.op = k; c.fresh = true; }
+}
+const APPV = {
+  news: () => `<ul class="nw-list">${news.items.length ? news.items.map((x) => `<li><a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a><small>${x.p ?? 0} pts · ${x.c ?? 0} comments</small></li>`).join("") : `<li class="empty">${news.err ? "Can't reach the news feed from here." : "Loading headlines"}</li>`}</ul><div class="btns"><button class="btn" data-act="news-refresh">Refresh</button></div>`,
+  weather: () => { const w = state.data.weather; return `<div class="eyebrow">${esc(w.city)} · ${esc(wx.status)}</div><div class="bignum big">${Math.round(w.temp)}<sup>°C</sup></div><div class="wx-cond">${ic(COND_ICON[w.cond])}${esc(w.cond)}</div><div class="wx-range">H ${Math.round(w.hi)}° · L ${Math.round(w.lo)}°</div><div class="hours show">${hoursHtml()}</div>
+    <form class="sr-form" data-form="wxcity"><input class="field" placeholder="Change city" aria-label="Change city" maxlength="40" autocomplete="off"><button class="iconbtn solid" type="submit" aria-label="Search">${ic("search")}</button></form>
+    <div class="btns"><button class="btn" data-act="wx-refresh">Refresh</button><button class="btn" data-act="wx-geo">Use my location</button></div>`; },
+  clock: () => {
+    const tabs = segHtml("cl-tab", ui.cl, [["alarm", "Alarms"], ["timer", "Timer"], ["stopwatch", "Stopwatch"]]);
+    if (ui.cl === "alarm") return tabs + `<form class="sr-form" data-form="alarm"><input class="field" type="time" id="al-t" required value="07:00" aria-label="Alarm time"><input class="field" id="al-l" placeholder="Label" maxlength="30" aria-label="Alarm label"><button class="iconbtn solid" type="submit" aria-label="Add alarm">${ic("plus")}</button></form>
+      <ul class="td-list al">${state.puma.alarms.length ? state.puma.alarms.map((a) => `<li><b class="al-t">${a.t}</b><span>${esc(a.l || "Alarm")}</span><input class="sw" type="checkbox" role="switch" data-al="${esc(a.id)}" ${a.on ? "checked" : ""} aria-label="Alarm ${a.t}"><button class="rm" data-act="al-del" data-id="${esc(a.id)}" aria-label="Delete alarm">${ic("x")}</button></li>`).join("") : '<li class="empty">No alarms yet.</li>'}</ul>`;
+    if (ui.cl === "timer") return tabs + `<div class="big-num" data-tm>${fmtT(tm.run ? Math.max(0, tm.end - Date.now()) : tm.left)}</div><div class="chips">${[1, 5, 10, 15].map((m) => `<button class="chip" data-act="tm-set" data-v="${m * 60}">${m} min</button>`).join("")}</div><div class="btns"><button class="btn" data-act="tm-go">${tm.run ? "Pause" : "Start"}</button><button class="btn" data-act="tm-reset">Reset</button></div>`;
+    return tabs + `<div class="big-num" data-sw>${fmtSw(swNow())}</div><div class="btns"><button class="btn" data-act="sw-go">${sw.run ? "Stop" : "Start"}</button><button class="btn" data-act="sw-lap">Lap</button><button class="btn" data-act="sw-reset">Reset</button></div><ol class="laps">${sw.laps.map((l) => `<li>${fmtSw(l)}</li>`).join("")}</ol>`;
+  },
+  calendar: () => {
+    const n = new Date(); if (ui.cy == null) { ui.cy = n.getFullYear(); ui.cm = n.getMonth(); }
+    const days = new Date(ui.cy, ui.cm + 1, 0).getDate(), off = (new Date(ui.cy, ui.cm, 1).getDay() + 6) % 7;
+    const isNow = (d) => d === n.getDate() && ui.cm === n.getMonth() && ui.cy === n.getFullYear();
+    return `<div class="cal-h"><button class="iconbtn" data-act="cal-prev" aria-label="Previous month">${ic("prev")}</button><b>${esc(new Date(ui.cy, ui.cm, 1).toLocaleDateString([], { month: "long", year: "numeric" }))}</b><button class="iconbtn" data-act="cal-next" aria-label="Next month">${ic("next")}</button></div>
+      <div class="cal">${"MTWTFSS".split("").map((d) => `<i>${d}</i>`).join("")}${"<span></span>".repeat(off)}${Array.from({ length: days }, (_, i) => `<div class="cal-d${isNow(i + 1) ? " today" : ""}">${i + 1}</div>`).join("")}</div>
+      <div class="btns"><button class="btn" data-act="cal-today">Today</button></div>`;
+  },
+  maps: () => {
+    const m = mapPos(), d = 0.02, q = (v) => v.toFixed(4);
+    return `<div class="eyebrow">${esc(m.label)}</div><iframe class="mp-frame" title="Map of ${esc(m.label)}" src="https://www.openstreetmap.org/export/embed.html?bbox=${q(m.lon - d * 1.6)},${q(m.lat - d)},${q(m.lon + d * 1.6)},${q(m.lat + d)}&layer=mapnik&marker=${q(m.lat)},${q(m.lon)}" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      <form class="sr-form" data-form="maps"><input class="field" placeholder="Search a place" aria-label="Search a place" autocomplete="off" maxlength="80"><button class="iconbtn solid" type="submit" aria-label="Search">${ic("search")}</button></form>
+      <div class="btns"><a class="btn" href="https://www.openstreetmap.org/?mlat=${q(m.lat)}&mlon=${q(m.lon)}#map=14/${q(m.lat)}/${q(m.lon)}" target="_blank" rel="noopener noreferrer">Open full map</a><button class="btn" data-act="maps-reset">Follow weather location</button></div>`;
+  },
+  facts: () => `<div class="eyebrow">${esc(fact.k)}</div><p class="fact-t">${esc(fact.t)}</p><div class="btns"><button class="btn" data-act="fact-next">Another one</button></div>`,
+  notes: () => `<div class="nt"><textarea class="field" placeholder="Jot something down" aria-label="Notes" maxlength="4000">${esc(state.data.notes)}</textarea></div><div class="btns"><button class="btn" data-act="nt-clear">Clear notes</button></div>`,
+  todo: () => {
+    const l = state.data.todo;
+    return `<form class="td-add" data-form="tk-add"><input class="field" id="tk-in" placeholder="Add a task" autocomplete="off" aria-label="New task" maxlength="120"><button class="iconbtn solid" type="submit" aria-label="Add task">${ic("plus")}</button></form>
+      <ul class="td-list">${l.length ? l.map((x) => `<li class="${x.done ? "done" : ""}"><button class="chk" data-act="tk-toggle" data-id="${esc(x.id)}" role="checkbox" aria-checked="${x.done}" aria-label="${esc(x.t)}">${x.done ? ic("check") : ""}</button><span>${esc(x.t)}</span><button class="rm" data-act="tk-del" data-id="${esc(x.id)}" aria-label="Delete task">${ic("x")}</button></li>`).join("") : '<li class="empty">Nothing to do.</li>'}</ul>
+      <div class="btns"><button class="btn" data-act="tk-clear">Clear completed</button></div>`;
+  },
+  calc: () => `<div class="calc-d" aria-live="polite">${esc(calc.d)}</div><div class="calc">${["C", "±", "%", "÷", "7", "8", "9", "×", "4", "5", "6", "−", "1", "2", "3", "+", "0", ".", "←", "="].map((k) => `<button class="ck${"÷×−+=".includes(k) ? " op" : ""}" data-act="calc" data-v="${k}">${k}</button>`).join("")}</div>`,
+  lynk: () => {
+    const c = state.puma.lynk;
+    return `<details class="ly-set"><summary>Connection</summary>
+      <label class="fl"><span>Ollama address</span><input class="field" data-lk="url" value="${esc(c.url)}" autocomplete="off"></label>
+      <label class="fl"><span>Model</span><input class="field" data-lk="model" value="${esc(c.model)}" autocomplete="off"></label>
+      <div class="btns"><button class="btn" data-act="lynk-test">Test connection</button></div>
+      <p class="note">If the connection fails, start Ollama with OLLAMA_ORIGINS=* so it accepts this page, then restart it.</p></details>
+      <div class="note" data-ly-status>${esc(lynk.status || "Not checked yet")}</div>
+      <div class="ly-msgs" aria-live="polite">${lynk.msgs.length ? lynk.msgs.map((m) => `<div class="ly-m ${m.r === "user" ? "me" : "ai"}${m.err ? " err" : ""}">${esc(m.c)}${m.err ? `<div class="note">${esc(m.err)}</div>` : ""}</div>`).join("") : '<p class="note">Say hello to Llama 3.2 1B.</p>'}</div>
+      <form class="sr-form" data-form="lynk"><input class="field" placeholder="Message Lynk" aria-label="Message Lynk" autocomplete="off" maxlength="2000" ${lynk.busy ? "disabled" : ""}>${lynk.busy ? `<button class="iconbtn solid" type="button" data-act="lynk-stop" aria-label="Stop">${ic("x")}</button>` : `<button class="iconbtn solid" type="submit" aria-label="Send">${ic("next")}</button>`}</form>
+      <div class="btns"><button class="btn" data-act="lynk-clear">Clear chat</button></div>`;
+  },
+  pkg: () => `<iframe id="pkgFrame" class="pkg-frame" title="Installed app" sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals"></iframe>`,
+  camera: () => `<div class="cam"><video id="camV" autoplay playsinline muted></video><p class="note" id="camMsg">Starting camera</p></div><div class="btns"><button class="btn" data-act="cam-flip">Flip</button><button class="btn" data-act="cam-snap">Take photo</button></div>`,
+  gallery: () => {
+    if (ui.gv >= 0 && photos[ui.gv]) return `<div class="gal-v" style="background-image:url(${photos[ui.gv]})" role="img" aria-label="Photo ${ui.gv + 1} of ${photos.length}"></div><div class="btns"><button class="iconbtn" data-act="gv-prev" aria-label="Previous">${ic("prev")}</button><button class="iconbtn" data-act="gv-next" aria-label="Next">${ic("next")}</button><button class="btn" data-act="gv-grid">All photos</button><button class="btn" data-act="gv-del">Delete</button></div>`;
+    return `<div class="btns"><button class="btn" data-act="ph-add">Add photos</button></div>${photos.length ? `<div class="gal">${photos.map((p, i) => `<button class="gal-i" data-act="gv-open" data-i="${i}" style="background-image:url(${p})" aria-label="Photo ${i + 1}"></button>`).join("")}</div>` : '<p class="note">No photos yet. Add some or take one with Camera.</p>'}`;
+  },
+  market: () => {
+    const tabs = segHtml("mk-tab", ui.mk, [["apps", "Apps"], ["widgets", "Widgets"], ["file", "Install from File"]]);
+    if (ui.mk === "apps") return tabs + `<ul class="td-list mk"><li><i class="lt">L</i><span><b>Lynk</b><small class="note">Chat with Llama 3.2 1B on your own computer through Ollama</small></span><button class="btn" data-act="mk-app" data-k="lynk">${state.puma.apps.includes("lynk") ? "Remove" : "Add"}</button></li>${Object.entries(WEB).map(([k, a]) => `<li><i class="lt">${esc(a.n[0])}</i><span><b>${esc(a.n)}</b><small class="note">${esc(a.u.replace("https://", ""))}</small></span><button class="btn" data-act="mk-app" data-k="${k}">${state.puma.apps.includes(k) ? "Remove" : "Add"}</button></li>`).join("")}</ul>`;
+    if (ui.mk === "file") return tabs + pkgPanel();
+    return tabs + `<p class="note">${state.extra} of 9 extra widgets on the display. Resize or change a widget from its menu in Display Mode.</p><ul class="td-list mk">${typeList().filter(([k]) => !k.startsWith("pw:")).map(([k, t]) => `<li>${ic(t.icon)}<span><b>${t.name}</b><small class="note">${t.desc}</small></span><button class="btn" data-act="mk-add" data-type="${k}" ${state.extra >= 9 ? "disabled" : ""}>Add</button></li>`).join("")}</ul>${typeList().some(([k]) => k.startsWith("pw:")) ? `<div class="eyebrow">From installed apps</div><ul class="td-list mk">${typeList().filter(([k]) => k.startsWith("pw:")).map(([k, t]) => `<li>${ic(t.icon)}<span><b>${t.name}</b><small class="note">${t.desc}</small></span><button class="btn" data-act="mk-add" data-type="${k}" ${state.extra >= 9 ? "disabled" : ""}>Add</button></li>`).join("")}</ul>` : ""}`;
+  },
+};
+function renderApp() {
+  const a = ui.app === "pkg" ? { n: state.puma.pkgs.find((k) => k.id === ui.pkg)?.name || "App", d: "make" } : APPS[ui.app]; if (!a) { ui.screen = "home"; return renderHome(); }
+  pm.innerHTML = `<div class="ap" style="--sc:var(${DCOL[a.d]})"><header class="ap-top"><button class="iconbtn solid" data-act="home" aria-label="Back to home">${ic("back")}</button><h1>${a.n}</h1></header><div class="ap-body">${APPV[ui.app]()}</div></div>`;
+  if (ui.app === "camera") startCam();
+  if (ui.app === "pkg") loadPkg();
+}
+function openItem(k) {
+  if (k.startsWith("web:")) { const a = WEB[k.slice(4)]; if (a) window.open(a.u, "_blank", "noopener,noreferrer"); return; }
+  if (k.startsWith("pkg:")) { ui.app = "pkg"; ui.pkg = k.slice(4); ui.screen = "app"; renderPuma(); return; }
+  if (k === "shutdown") return openSheet({ kind: "shutdown" });
+  if (k === "display") return enterDisplay(true);
+  if (k === "settings") return openSheet({ kind: "settings" });
+  ui.app = k; ui.screen = "app"; ui.gv = -1; renderPuma();
+  if (k === "lynk") lynkPing();
+}
+function enterDisplay(edit) { ui.mode = "display"; ui.edit = !!edit; ui.idle = Date.now(); build(); renderPuma(); }
+function enterInterface() { ui.mode = "interface"; ui.screen = "home"; ui.edit = false; ui.idle = Date.now(); applyLook(); renderPuma(); }
+const unlock = () => { if (ui.mode === "interface" && ui.screen === "lock") { if (state.puma.gate && acc && !ui.user) { openSheet({ kind: "login" }); return; } ui.screen = "home"; renderPuma(); } };
+
+/* camera */
+async function startCam() {
+  stopCam(); const v = $("#camV"), m = $("#camMsg");
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error("not supported");
+    camS = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFace }, audio: false });
+    if (ui.app !== "camera" || ui.screen !== "app" || !v.isConnected) return stopCam();
+    v.srcObject = camS; m.hidden = true;
+  } catch (e) { if (m) m.textContent = "Camera isn't available here. Allow camera access in your browser."; dbg.log("camera: " + e.message); }
+}
+function stopCam() { camS?.getTracks().forEach((t) => t.stop()); camS = null; }
+function snap() {
+  const v = $("#camV");
+  if (!camS || !v.videoWidth) return note("Camera isn't ready.", "alert");
+  const k = Math.min(1, 900 / Math.max(v.videoWidth, v.videoHeight)), c = document.createElement("canvas");
+  c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k); c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+  if (photos.length >= 12) photos.shift();
+  photos.push(c.toDataURL("image/jpeg", 0.72)); pi = photos.length - 1; savePhotos(); renderType("photos"); note("Saved to Photos");
+}
+
+/* clock engine: alarms, timer, stopwatch, ring */
+function beepStart() {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume?.();
+    const b = () => { const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = 880; o.connect(g); g.connect(ac.destination); g.gain.setValueAtTime(0.2, ac.currentTime); o.start(); o.stop(ac.currentTime + 0.25); };
+    b(); beepT = setInterval(b, 700);
+  } catch {}
+}
+const beepStop = () => { clearInterval(beepT); };
+function ring(msg) { if (ui.mode === "off" || sheet?.kind === "ring") return; openSheet({ kind: "ring", msg }); beepStart(); }
+function tick() {
+  const k = lockTime();
+  $$("[data-lk-h]").forEach((x) => (x.textContent = k.h)); $$("[data-lk-m]").forEach((x) => (x.textContent = k.m)); $$("[data-hm-t]").forEach((x) => (x.textContent = k.h + ":" + k.m));
+  $$("[data-tm]").forEach((x) => (x.textContent = fmtT(tm.run ? Math.max(0, tm.end - Date.now()) : tm.left)));
+  if (tm.run && Date.now() >= tm.end) { tm.run = false; tm.left = 0; ring("Timer done"); }
+  const key = new Date().toTimeString().slice(0, 5);
+  if (key !== lastMin) { lastMin = key; for (const a of state.puma.alarms) if (a.on && a.t === key) ring(a.l || "Alarm " + a.t); }
+  if (snooze && Date.now() >= snooze.at) { const m = snooze.m; snooze = null; ring(m); }
+}
+setInterval(tick, 1000);
+setInterval(() => { if (sw.run) $$("[data-sw]").forEach((x) => (x.textContent = fmtSw(swNow()))); }, 100);
+setInterval(() => { if (state.puma.dm && !sheet && Date.now() - ui.idle > 120000 && (ui.mode === "interface" || ui.edit)) enterDisplay(false); }, 5000);
+["pointerdown", "keydown"].forEach((ev) => addEventListener(ev, () => (ui.idle = Date.now()), true));
+
+/* passcode */
+async function hashPin(p, salt) {
+  const t = "puma:" + salt + ":" + p;
+  try { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""); }
+  catch { let h = 2166136261; for (const c of t) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16).padStart(8, "0"); }
+}
+const checkPin = async (v) => { const p = state.puma.pin; return !!p && (await hashPin(v, p.s)) === p.h; };
+async function savePin(v) { const salt = [...crypto.getRandomValues(new Uint8Array(4))].map((x) => x.toString(16).padStart(2, "0")).join(""); state.puma.pin = { s: salt, h: await hashPin(v, salt) }; persist(); }
+function askPin(m, cb) {
+  Object.assign(pad, { m, cb, buf: "", first: "", title: m === "new" ? "New passcode" : m === "old" ? "Current passcode" : "Enter passcode", msg: m === "new" ? "Choose 4 digits" : "" });
+  openSheet({ kind: "pass" });
+}
+async function pinKey(k) {
+  if (Date.now() < pad.until) { pad.msg = "Too many tries. Please wait."; return renderSheet(); }
+  if (k === "del") pad.buf = pad.buf.slice(0, -1); else if (pad.buf.length < 4) pad.buf += k;
+  if (pad.buf.length < 4) return renderSheet();
+  const v = pad.buf; pad.buf = "";
+  if (pad.m === "verify" || pad.m === "old") {
+    if (await checkPin(v)) {
+      pad.tries = 0;
+      if (pad.m === "old") { pad.m = "new"; pad.title = "New passcode"; pad.msg = "Choose 4 digits"; }
+      else { const cb = pad.cb; closeSheet(); return cb?.(); }
+    } else { pad.tries++; pad.msg = "Wrong passcode"; if (pad.tries >= 5) { pad.until = Date.now() + 30000; pad.tries = 0; pad.msg = "Too many tries. Wait 30 seconds."; } }
+  } else if (pad.m === "new") { pad.first = v; pad.m = "confirm"; pad.title = "Confirm passcode"; pad.msg = "Enter it again"; }
+  else if (pad.m === "confirm") {
+    if (v === pad.first) { await savePin(v); closeSheet(); return note("Passcode saved"); }
+    pad.m = "new"; pad.title = "New passcode"; pad.msg = "Those didn't match. Try again.";
+  }
+  renderSheet();
+}
+let lkY = null;
+stage.addEventListener("pointerdown", (e) => { const b = e.target.closest?.(".lk-up"); if (!b) return; lkY = e.clientY; b.setPointerCapture?.(e.pointerId); });
+stage.addEventListener("pointermove", (e) => { if (lkY === null) return; const b = $(".lk-up"); if (b) b.style.transform = `translateY(${Math.min(0, e.clientY - lkY)}px)`; });
+stage.addEventListener("pointerup", (e) => { if (lkY === null) return; const dy = e.clientY - lkY; lkY = null; const b = $(".lk-up"); if (b) b.style.transform = ""; if (dy < -70) unlock(); });
+stage.addEventListener("pointercancel", () => { lkY = null; });
+let nTaps = [];
+stage.addEventListener("pointerdown", (e) => {
+  if (ui.mode !== "display" || !state.puma.dm || ui.edit || sheet) return;
+  const rs = $$(".slot", board).map((n) => n.getBoundingClientRect()).filter((r) => r.width > 0 && r.bottom > 0 && r.top < innerHeight);
+  if (!rs.length) return;
+  const top = Math.min(...rs.map((r) => r.top)), r = rs.filter((x) => x.top - top < 6).sort((a, b) => b.right - a.right)[0];
+  if (e.clientX < r.right - 64 || e.clientX > r.right || e.clientY < r.top || e.clientY > r.top + 64) { nTaps = []; return; }
+  const n = Date.now(); nTaps = nTaps.filter((t) => n - t < 900); nTaps.push(n);
+  if (nTaps.length >= 3) { nTaps = []; state.night = !state.night; persist(); applyLook(); note(state.night ? "Night mode" : "Day mode"); }
+});
+
+/* ---------- zip, storage, packages (.ppk), accounts and backups (.pacc) ---------- */
+const enc = new TextEncoder(), dec = new TextDecoder();
+const crcT = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = (u) => { let c = -1; for (let i = 0; i < u.length; i++) c = crcT[(c ^ u[i]) & 255] ^ (c >>> 8); return (~c) >>> 0; };
+function zip(files) {
+  const parts = [], cen = []; let off = 0, count = 0;
+  for (const [name, data] of Object.entries(files)) {
+    const nb = enc.encode(name), crc = crc32(data), lh = new DataView(new ArrayBuffer(30)), ch = new DataView(new ArrayBuffer(46));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(12, 33, true); lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, nb.length, true);
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(14, 33, true); ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, nb.length, true); ch.setUint32(42, off, true);
+    parts.push(new Uint8Array(lh.buffer), nb, data); cen.push(new Uint8Array(ch.buffer), nb); off += 30 + nb.length + data.length; count++;
+  }
+  const csz = cen.reduce((a, b) => a + b.length, 0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, count, true); end.setUint16(10, count, true); end.setUint32(12, csz, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...cen, new Uint8Array(end.buffer)], { type: "application/zip" });
+}
+async function unzip(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(buf); let e = u8.length - 22;
+  while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+  if (e < 0) throw new Error("That isn't a valid archive.");
+  const n = dv.getUint16(e + 10, true), out = {}; let p = dv.getUint32(e + 16, true);
+  for (let i = 0; i < n; i++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error("The archive is damaged.");
+    const meth = dv.getUint16(p + 10, true), csz = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lo = dv.getUint32(p + 42, true), name = dec.decode(u8.subarray(p + 46, p + 46 + nl));
+    p += 46 + nl + xl + cl;
+    if (name.endsWith("/")) continue;
+    const st = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true), raw = u8.subarray(st, st + csz);
+    if (meth === 0) out[name] = raw.slice();
+    else if (meth === 8) out[name] = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+    else throw new Error("This archive uses an unsupported compression method.");
+  }
+  return out;
+}
+const MIME = { html: "text/html", htm: "text/html", css: "text/css", js: "text/javascript", mjs: "text/javascript", json: "application/json", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", ico: "image/x-icon", woff: "font/woff", woff2: "font/woff2", ttf: "font/ttf", txt: "text/plain", mp3: "audio/mpeg", mp4: "video/mp4", wav: "audio/wav" };
+const mimeOf = (n) => MIME[n.split(".").pop().toLowerCase()] || "application/octet-stream";
+const b64 = (u) => { let t = ""; for (let i = 0; i < u.length; i += 0x8000) t += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(t); };
+const dataUrl = (u, n) => `data:${mimeOf(n)};base64,${b64(u)}`;
+const fromDataUrl = (d) => Uint8Array.from(atob(d.split(",")[1]), (c) => c.charCodeAt(0));
+function saveBlob(blob, name) { const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
+
+const idbOpen = () => new Promise((res, rej) => { const r = indexedDB.open("puma-fs", 1); r.onupgradeneeded = () => r.result.createObjectStore("f"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const idbDo = async (mode, fn) => { const db = await idbOpen(); return new Promise((res, rej) => { const tx = db.transaction("f", mode), rq = fn(tx.objectStore("f")); tx.oncomplete = () => { db.close(); res(rq.result); }; tx.onerror = () => rej(tx.error); }); };
+const fsPut = (k, v) => idbDo("readwrite", (st) => st.put(v, k));
+const fsGet = (k) => idbDo("readonly", (st) => st.get(k));
+const fsDel = (k) => idbDo("readwrite", (st) => st.delete(k));
+const fsKeys = async (pre) => { try { return (await idbDo("readonly", (st) => st.getAllKeys())).filter((k) => k.startsWith(pre)); } catch { return []; } };
+const okId = (v) => /^[a-z0-9._-]{1,40}$/.test(v);
+const pkgRec = (id) => state.puma.pkgs.find((k) => k.id === id);
+
+const slug = (v) => String(v || "").toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+const jsonSafe = (o) => JSON.stringify(o).replace(/</g, "\\u003c");
+async function readPkg(file, optional) {
+  if (file.size > 8e6) throw new Error("That package is larger than 8 MB.");
+  let all = await unzip(await file.arrayBuffer());
+  all = Object.fromEntries(Object.entries(all).filter(([k]) => !k.startsWith("__MACOSX/") && !k.endsWith(".DS_Store") && !k.startsWith("/") && !k.split("/").includes("..")));
+  const mk = Object.keys(all).find((k) => /(^|\/)manifest\.json$/.test(k));
+  if (!mk && !optional) throw new Error("No manifest.json found in this package.");
+  const ks = Object.keys(all), top = ks.length && ks.every((k) => k.includes("/") && k.split("/")[0] === ks[0].split("/")[0]) ? ks[0].split("/")[0] + "/" : "";
+  const base = mk ? mk.slice(0, -"manifest.json".length) : top, rel = {};
+  for (const [k, v] of Object.entries(all)) if (k.startsWith(base)) rel[k.slice(base.length)] = v;
+  if (Object.keys(rel).length > 300) throw new Error("There are too many files in this package.");
+  return { rel, m: rel["manifest.json"] ? JSON.parse(dec.decode(rel["manifest.json"])) : {} };
+}
+function discoverWidgets(rel) {
+  const htmls = Object.keys(rel).filter((k) => /\.html?$/i.test(k)), csss = Object.keys(rel).filter((k) => /\.css$/i.test(k)), stem = (k) => k.split("/").pop().replace(/\.[^.]+$/, "");
+  return htmls.slice(0, 6).map((k) => ({ id: stem(k), name: stem(k).replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), entry: k, css: csss.find((c) => stem(c) === stem(k)) || csss.find((c) => /^(style|styles|theme|widget|widgets|main)$/i.test(stem(c))) || csss[0] || "" }));
+}
+function parseWidgets(m, rel, shorthand) {
+  const raw = Array.isArray(m.widgets) && m.widgets.length ? m.widgets : shorthand ? (m.entry && rel[m.entry] ? [{ id: "main", name: m.name, entry: m.entry, css: m.css, size: m.size }] : discoverWidgets(rel)) : [], out = [], used = new Set();
+  for (const w of raw.slice(0, 6)) {
+    const entry = String(w.entry || ""), css = w.css ? String(w.css) : "", wid = slug(w.id || w.name);
+    if (!wid || !rel[entry]) throw new Error(`Widget "${w.name || wid}" is missing its HTML file "${entry}".`);
+    if (css && !rel[css]) throw new Error(`Widget "${w.name || wid}" is missing its CSS file "${css}".`);
+    let u = wid, n = 2; while (used.has(u)) u = wid + "-" + n++; used.add(u);
+    out.push({ wid: u, name: String(w.name || m.name || wid).slice(0, 40), entry: entry.slice(0, 120), css: css.slice(0, 120), size: SZ[w.size] ? w.size : "regular" });
+  }
+  return out;
+}
+function setWidgets(pid, src, owner, ownerName, version, list) {
+  state.puma.wdg = [...state.puma.wdg.filter((w) => !(w.pid === pid && w.src === src)), ...list.map((w) => ({ id: pid + ":" + w.wid, wid: w.wid, pid, src, app: owner, appName: ownerName, version, name: w.name, entry: w.entry, css: w.css, size: w.size }))];
+  regWidgets(); build();
+}
+function autoPlace(pid, src) {
+  let n = 0;
+  for (const w of state.puma.wdg.filter((x) => x.pid === pid && x.src === src)) { if (state.extra >= 9) break; state.extra++; const x = "x" + state.extra; state.slots[x] = "pw:" + w.id; state.sizes[x] = w.size; n++; }
+  if (n) { persist(); build(); }
+  return n;
+}
+function dropWidgets(pid, src) {
+  const gone = state.puma.wdg.filter((w) => w.pid === pid && w.src === src).map((w) => "pw:" + w.id);
+  state.puma.wdg = state.puma.wdg.filter((w) => !(w.pid === pid && w.src === src));
+  for (const id in state.slots) if (gone.includes(state.slots[id])) state.slots[id] = "clock";
+  regWidgets(); build();
+}
+async function installPpk(file) {
+  const { rel, m } = await readPkg(file);
+  const id = slug(m.id || m.name), entry = String(m.entry || "index.html");
+  if (!id || !m.name) throw new Error("manifest.json needs a name.");
+  if (id.startsWith("_")) throw new Error("Package ids can't start with an underscore.");
+  if (!rel[entry]) throw new Error(`The entry file "${entry}" is missing.`);
+  const wl = parseWidgets(m, rel, false), updated = !!pkgRec(id);
+  for (const k of await fsKeys("pkg/" + id + "/")) await fsDel(k);
+  for (const [k, v] of Object.entries(rel)) if (k !== "manifest.json" && !k.endsWith(".account")) await fsPut("pkg/" + id + "/" + k, v);
+  const acct = Object.keys(rel).find((k) => k.endsWith(".account"));
+  if (acct && !(await fsGet("acct/" + id))) await fsPut("acct/" + id, dec.decode(rel[acct]));
+  const rec = { id, name: String(m.name).slice(0, 40), version: String(m.version || "1.0").slice(0, 20), author: String(m.author || "").slice(0, 40), desc: String(m.description || "").slice(0, 160), entry };
+  state.puma.pkgs = [...state.puma.pkgs.filter((k) => k.id !== id), rec];
+  setWidgets(id, "pkg", id, rec.name, rec.version, wl); persist();
+  return { rec, updated, widgets: wl.length, placed: updated ? 0 : autoPlace(id, "pkg") };
+}
+async function installPwg(file) {
+  const { rel, m: m0 } = await readPkg(file, true), stemName = file.name.replace(/\.[^.]+$/, "");
+  const m = { ...m0, name: m0.name || stemName.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), id: m0.id || slug(stemName) };
+  const id = slug(m.id || m.name);
+  if (!id) throw new Error("Give this package a name.");
+  const wl = parseWidgets(m, rel, true);
+  if (!wl.length) throw new Error("This package has no widgets. Add an .html file (and a .css file).");
+  if (id.startsWith("_") || slug(m.app).startsWith("_")) throw new Error("Package ids can't start with an underscore.");
+  const owner = slug(m.app) || id, updated = state.puma.pwgs.some((k) => k.id === id);
+  for (const k of await fsKeys("wgt/" + id + "/")) await fsDel(k);
+  for (const [k, v] of Object.entries(rel)) if (k !== "manifest.json" && !k.endsWith(".account")) await fsPut("wgt/" + id + "/" + k, v);
+  const acct = Object.keys(rel).find((k) => k.endsWith(".account"));
+  if (acct && !(await fsGet("acct/" + owner))) await fsPut("acct/" + owner, dec.decode(rel[acct]));
+  const rec = { id, name: String(m.name).slice(0, 40), version: String(m.version || "1.0").slice(0, 20), author: String(m.author || "").slice(0, 40), app: owner };
+  state.puma.pwgs = [...state.puma.pwgs.filter((k) => k.id !== id), rec];
+  setWidgets(id, "wgt", owner, pkgRec(owner)?.name || owner, rec.version, wl); persist();
+  return { rec, updated, widgets: wl.length, placed: updated ? 0 : autoPlace(id, "wgt") };
+}
+async function removePkg(id) {
+  for (const k of await fsKeys("pkg/" + id + "/")) await fsDel(k);
+  state.puma.pkgs = state.puma.pkgs.filter((k) => k.id !== id); dropWidgets(id, "pkg"); persist();
+}
+async function removePwg(id) {
+  for (const k of await fsKeys("wgt/" + id + "/")) await fsDel(k);
+  state.puma.pwgs = state.puma.pwgs.filter((k) => k.id !== id); dropWidgets(id, "wgt"); persist();
+}
+/* documents: assets inlined, system theme and account bridge injected */
+const inlUrl = (files, v, dir) => { if (/^(https?:|data:|#|mailto:|javascript:|blob:)/i.test(v)) return null; const k = (v.startsWith("/") ? v.slice(1) : dir + v.replace(/^\.\//, "")).split("#")[0].split("?")[0]; return files[k] ? dataUrl(files[k], k) : null; };
+function buildDoc(files, entry, head) {
+  const dir = entry.includes("/") ? entry.slice(0, entry.lastIndexOf("/") + 1) : "";
+  let doc = dec.decode(files[entry]);
+  doc = doc.replace(/\b(src|href)=(["'])([^"']+)\2/gi, (m, a, q, v) => { const u = inlUrl(files, v, dir); return u ? `${a}=${q}${u}${q}` : m; });
+  doc = doc.replace(/url\((["']?)([^)"']+)\1\)/gi, (m, q, v) => { const u = inlUrl(files, v, dir); return u ? `url(${q}${u}${q})` : m; });
+  return /<head[^>]*>/i.test(doc) ? doc.replace(/<head[^>]*>/i, (h) => h + head) : head + doc;
+}
+function themeVars(el) {
+  const cs = getComputedStyle(el || stage), st = getComputedStyle(stage);
+  return { "--puma-bg": cs.backgroundColor, "--puma-fg": cs.color, "--puma-dim": cs.getPropertyValue("--dim").trim() || cs.color, "--puma-line": `color-mix(in srgb, ${cs.color} 20%, transparent)`, "--puma-radius": st.getPropertyValue("--r").trim() || "28px", "--puma-font": '"Bricolage Grotesque", system-ui, sans-serif', "--puma-scheme": st.colorScheme || "light" };
+}
+const themeStyle = (v, base) => `:root{${Object.entries(v).map(([k, x]) => (k === "--puma-scheme" ? `color-scheme:${x}` : `${k}:${x}`)).join(";")}}` + (base ? "html,body{margin:0;background:transparent;color:var(--puma-fg);font-family:var(--puma-font)}" : "");
+const bridgeJs = (info, theme) => "<script>" + `(function(){var n=0,p={};function ap(t){var s=document.documentElement.style;for(var k in t){if(k==="--puma-scheme")s.colorScheme=t[k];else s.setProperty(k,t[k])}if(window.puma)window.puma.theme=t;dispatchEvent(new CustomEvent("puma-theme",{detail:t}))}addEventListener("message",function(e){var d=e.data;if(!d||!d.puma)return;if(d.theme){ap(d.theme);return}if(p[d.id]){p[d.id](d.result);delete p[d.id]}});function call(m,a){return new Promise(function(r){var id=++n;p[id]=r;parent.postMessage({puma:1,id:id,m:m,a:a},"*")})}window.puma={info:${jsonSafe(info)},theme:${jsonSafe(theme)},account:{get:function(){return call("account.get")},set:function(v){return call("account.set",v)}},close:function(){return call("close")}}})();` + "<\/script>";
+async function pkgDoc(id) {
+  const rec = pkgRec(id), pre = "pkg/" + id + "/", files = {};
+  if (!rec) throw new Error("That app isn't installed.");
+  for (const k of await fsKeys(pre)) files[k.slice(pre.length)] = await fsGet(k);
+  if (!files[rec.entry]) throw new Error("This app's files are missing. Reinstall it.");
+  const th = themeVars($(".ap"));
+  return buildDoc(files, rec.entry, `<style>${themeStyle(th)}</style>` + bridgeJs({ name: rec.name, version: rec.version }, th));
+}
+async function loadPkg() {
+  const fr = $("#pkgFrame"); if (!fr) return;
+  try { fr.srcdoc = await pkgDoc(ui.pkg); } catch (e) { note(e.message, "alert"); }
+}
+async function pwDoc(w, el) {
+  const pre = w.src + "/" + w.pid + "/", files = {};
+  for (const k of await fsKeys(pre)) files[k.slice(pre.length)] = await fsGet(k);
+  if (!files[w.entry]) throw new Error("This widget's files are missing. Reinstall it.");
+  const th = themeVars(el); let css = "";
+  if (w.css && files[w.css] && !dec.decode(files[w.entry]).includes(w.css)) {
+    const cd = w.css.includes("/") ? w.css.slice(0, w.css.lastIndexOf("/") + 1) : "";
+    css = "<style>" + dec.decode(files[w.css]).replace(/url\((["']?)([^)"']+)\1\)/gi, (m, q, v) => { const u = inlUrl(files, v, cd); return u ? `url(${q}${u}${q})` : m; }) + "</style>";
+  }
+  return buildDoc(files, w.entry, `<style>${themeStyle(th, true)}</style>` + css + bridgeJs({ name: w.name, version: w.version }, th));
+}
+function regWidgets() {
+  for (const k of Object.keys(TYPES)) if (k.startsWith("pw:")) { delete TYPES[k]; delete R[k]; }
+  for (const w of state.puma.wdg) {
+    const t = "pw:" + w.id;
+    TYPES[t] = { name: w.name, desc: "Widget from " + w.appName, icon: "widgets" };
+    R[t] = () => `<div class="pw"><iframe class="pw-frame" data-wid="${esc(w.id)}" data-owner="${esc(w.app)}" title="${esc(w.name)}" sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe></div>`;
+  }
+  for (const id in SLOTS) { const t = state.slots[id]; if (typeof t === "string" && t.startsWith("pw:") && !TYPES[t]) { TYPES[t] = { name: "Missing widget", desc: "This widget isn't installed.", icon: "alert" }; R[t] = () => `<div class="in"><div class="top"><span class="eyebrow">Widget</span></div><p class="note">This widget is no longer installed. Choose another from this tile's menu, or reinstall it from Marketplace.</p></div>`; } }
+}
+function loadPw() {
+  $$(".pw-frame:not([data-ld])").forEach(async (fr) => {
+    fr.dataset.ld = "1";
+    try { const w = state.puma.wdg.find((x) => x.id === fr.dataset.wid); if (!w) throw new Error("not registered"); fr.srcdoc = await pwDoc(w, fr.closest(".slot") || stage); }
+    catch (e) { fr.srcdoc = '<body style="font:14px system-ui;padding:12px;color:#888">This widget could not load.</body>'; dbg.log("widget: " + e.message); }
+  });
+}
+new MutationObserver(loadPw).observe(board, { childList: true, subtree: true });
+function pushTheme() { $$(".pw-frame[data-ld]").forEach((fr) => fr.contentWindow?.postMessage({ puma: 1, theme: themeVars(fr.closest(".slot") || stage) }, "*")); }
+addEventListener("message", async (e) => {
+  const fr = [...document.querySelectorAll("#pkgFrame,.pw-frame")].find((x) => x.contentWindow === e.source);
+  if (!fr || !e.data?.puma || e.data.theme) return;
+  const isApp = fr.id === "pkgFrame", owner = isApp ? ui.pkg : fr.dataset.owner, { id, m, a } = e.data; let result = null;
+  if (String(owner).startsWith("_")) return;
+  try {
+    if (m === "account.get") { const t = await fsGet("acct/" + owner); result = t ? JSON.parse(t).data ?? null : null; }
+    else if (m === "account.set") { const t = JSON.stringify({ puma: "account", app: owner, version: 1, saved: new Date().toISOString(), data: a }); result = t.length < 1e6; if (result) await fsPut("acct/" + owner, t); }
+    else if (m === "close" && isApp) { ui.screen = "home"; renderPuma(); }
+  } catch { result = null; }
+  fr.contentWindow?.postMessage({ puma: 1, id, result }, "*");
+});
+const pkgPanel = () => `<p class="note">Install apps and widgets from files. A <b>.ppk</b> is a zip with a <b>manifest.json</b> (name, version, entry file), the app's HTML and assets, and optionally a <b>.account</b> file for its saved info. A <b>.pwg</b> is a zip with one or more HTML files and a CSS file (a manifest.json is optional); its widgets show up under Widgets and can sit on the Display Mode screen. Widget CSS can match the system with var(--puma-bg), var(--puma-fg), var(--puma-dim), var(--puma-line) and var(--puma-radius). Only install files you trust.</p>
+  <div class="btns"><button class="btn" data-act="ppk-choose">Choose .ppk or .pwg file</button></div>
+  <div class="eyebrow">Apps</div>
+  <ul class="td-list mk">${state.puma.pkgs.length ? state.puma.pkgs.map((k) => { const n = state.puma.wdg.filter((w) => w.src === "pkg" && w.pid === k.id).length; return `<li><i class="lt">${esc(k.name[0] || "?")}</i><span><b>${esc(k.name)}</b><small class="note">v${esc(k.version)}${k.author ? " · " + esc(k.author) : ""}${n ? " · " + n + " widget" + (n > 1 ? "s" : "") : ""}</small></span><button class="btn" data-act="pkg-export" data-id="${esc(k.id)}">Export</button><button class="btn" data-act="pkg-remove" data-id="${esc(k.id)}">Remove</button></li>`; }).join("") : '<li class="empty">No apps installed from files yet.</li>'}</ul>
+  <div class="eyebrow">Widget packages</div>
+  <ul class="td-list mk">${state.puma.pwgs.length ? state.puma.pwgs.map((k) => { const n = state.puma.wdg.filter((w) => w.src === "wgt" && w.pid === k.id).length; return `<li>${ic("widgets")}<span><b>${esc(k.name)}</b><small class="note">v${esc(k.version)} · ${n} widget${n === 1 ? "" : "s"} · for ${esc(k.app)}</small></span><button class="btn" data-act="pwg-export" data-id="${esc(k.id)}">Export</button><button class="btn" data-act="pwg-remove" data-id="${esc(k.id)}">Remove</button></li>`; }).join("") : '<li class="empty">No widget packages installed yet.</li>'}</ul>`;
+async function exportPwg(id) {
+  const rec = state.puma.pwgs.find((k) => k.id === id), pre = "wgt/" + id + "/", f = {};
+  if (!rec) return;
+  f["manifest.json"] = enc.encode(JSON.stringify({ id, name: rec.name, version: rec.version, author: rec.author, app: rec.app, widgets: state.puma.wdg.filter((w) => w.src === "wgt" && w.pid === id).map((w) => ({ id: w.wid, name: w.name, entry: w.entry, css: w.css, size: w.size })) }, null, 2));
+  for (const k of await fsKeys(pre)) f[k.slice(pre.length)] = await fsGet(k);
+  const a = await fsGet("acct/" + rec.app).catch(() => null); if (a) f[rec.app + ".account"] = enc.encode(a);
+  saveBlob(zip(f), id + ".pwg"); note("Exported " + id + ".pwg");
+}
+async function exportPpk(id) {
+  const rec = pkgRec(id), pre = "pkg/" + id + "/", f = {};
+  if (!rec) return;
+  f["manifest.json"] = enc.encode(JSON.stringify({ id: rec.id, name: rec.name, version: rec.version, author: rec.author, description: rec.desc, entry: rec.entry, widgets: state.puma.wdg.filter((w) => w.src === "pkg" && w.pid === id).map((w) => ({ id: w.wid, name: w.name, entry: w.entry, css: w.css, size: w.size })) }, null, 2));
+  for (const k of await fsKeys(pre)) f[k.slice(pre.length)] = await fsGet(k);
+  f[id + ".account"] = enc.encode((await fsGet("acct/" + id).catch(() => null)) || JSON.stringify({ puma: "account", app: id, version: 1, saved: new Date().toISOString(), data: null }));
+  saveBlob(zip(f), id + ".ppk"); note("Exported " + id + ".ppk");
+}
+async function buildPacc() {
+  const f = {};
+  f["pacc.json"] = enc.encode(JSON.stringify({ format: "pacc", version: 1, hub: "6.1a", created: new Date().toISOString() }));
+  f["system.smrtpage"] = enc.encode(JSON.stringify(state, null, 2));
+  photos.forEach((p, i) => { f[`photos/photo-${String(i + 1).padStart(2, "0")}.jpg`] = fromDataUrl(p); });
+  if (state.wall.id === "custom") { const t = state.wall.url.match(/^data:image\/(\w+);/); f[`wallpapers/wallpaper.${t ? t[1] : "jpg"}`] = fromDataUrl(state.wall.url); }
+  for (const k of await fsKeys("acct/")) f[`accounts/${k.slice(5)}.account`] = enc.encode(await fsGet(k));
+  for (const k of await fsKeys("pkg/")) f[`apps/${k.slice(4)}`] = await fsGet(k);
+  for (const k of await fsKeys("wgt/")) f[`widgets/${k.slice(4)}`] = await fsGet(k);
+  return zip(f);
+}
+async function savePacc() {
+  try { saveBlob(await buildPacc(), `puma-backup-${new Date().toISOString().slice(0, 10)}.pacc`); note("Saved your .pacc backup"); return true; }
+  catch (e) { note("Couldn't build the backup: " + e.message, "alert"); return false; }
+}
+async function restorePacc(file) {
+  const f = await unzip(await file.arrayBuffer());
+  if (!f["system.smrtpage"]) throw new Error("That isn't a .pacc backup.");
+  const o = JSON.parse(dec.decode(f["system.smrtpage"]));
+  if (!o || o.format !== "smrtpage") throw new Error("The backup data is damaged.");
+  state = sanitize(o);
+  photos = Object.keys(f).filter((k) => /^photos\/.+\.jpe?g$/i.test(k)).sort().slice(0, 12).map((k) => dataUrl(f[k], "x.jpg")); pi = 0; savePhotos();
+  for (const [k, v] of Object.entries(f)) {
+    const a = k.match(/^accounts\/([a-z0-9._-]{1,40})\.account$/), p = k.match(/^apps\/([a-z0-9._-]{1,40})\//), w = k.match(/^widgets\/([a-z0-9._-]{1,40})\//);
+    if (a) await fsPut("acct/" + a[1], dec.decode(v)); else if (p) await fsPut("pkg/" + k.slice(5), v); else if (w) await fsPut("wgt/" + k.slice(8), v);
+  }
+  try { const t = await fsGet("acct/_puma"); acc = t ? JSON.parse(t).data : null; } catch {}
+  ui.user = null; linkStop();
+  regWidgets(); persist(); changed(true); renderPuma();
+}
+const bootEl = $("#boot");
+function bootScreen() {
+  const quick = matchMedia("(prefers-reduced-motion:reduce)").matches;
+  clearTimeout(bootEl._a); clearTimeout(bootEl._b);
+  bootEl.className = "boot"; bootEl.hidden = false;
+  bootEl.innerHTML = `<div class="bt-logo" role="img" aria-label="Puma6">${[["P", "#FF6A2B"], ["u", "#C8B8FF"], ["m", "#DFFF5E"], ["a", "#7FD4FF"], ["6", "#F3F0E8"]].map(([c, col], i) => `<span style="--c:${col};--d:${i * 0.12}s">${c}</span>`).join("")}</div><div class="bt-bar"><i></i></div>`;
+  bootEl._a = setTimeout(() => bootEl.classList.add("out"), quick ? 600 : 2400);
+  bootEl._b = setTimeout(() => { bootEl.hidden = true; }, quick ? 800 : 3000);
+}
+/* ---------- account and PumaDev link ---------- */
+let acc = null;
+(async () => { try { const t = await fsGet("acct/_puma"); if (t) acc = JSON.parse(t).data; } catch {} if (ui.mode === "interface") renderPuma(); })();
+const rndHex = (n) => [...crypto.getRandomValues(new Uint8Array(n))].map((x) => x.toString(16).padStart(2, "0")).join("");
+async function pbkdf(pass, salt) {
+  try {
+    const k = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveBits"]);
+    const b = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: enc.encode("puma:" + salt), iterations: 120000 }, k, 256);
+    return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+  } catch { return hashPin(pass, salt); }
+}
+const saveAcc = () => fsPut("acct/_puma", JSON.stringify({ puma: "account", app: "_puma", version: 1, saved: new Date().toISOString(), data: acc }));
+const checkPass = async (p) => !!acc && (await pbkdf(p, acc.salt)) === acc.hash;
+async function accForm(f) {
+  const fd = new FormData(f), k = f.dataset.form, g = (n) => String(fd.get(n) || "");
+  try {
+    if (k === "acc-create") {
+      const u = g("u").trim().toLowerCase(), p = g("p");
+      if (acc) throw new Error("An account already exists on this device.");
+      if (!/^[a-z0-9._-]{3,24}$/.test(u)) throw new Error("Usernames are 3 to 24 letters, numbers, dots, dashes or underscores.");
+      if (p.length < 6) throw new Error("Use a password of at least 6 characters.");
+      if (p !== g("p2")) throw new Error("The passwords don't match.");
+      const salt = rndHex(8); acc = { user: u, name: g("n").trim().slice(0, 30) || u, salt, hash: await pbkdf(p, salt), created: new Date().toISOString() };
+      await saveAcc(); ui.user = u; note("Account created. Welcome, " + acc.name);
+    } else if (k === "acc-login") {
+      if (!acc) throw new Error("There's no account on this device yet.");
+      if (Date.now() < (ui.until || 0)) throw new Error("Too many tries. Wait a moment.");
+      const u = (g("u") || acc.user).trim().toLowerCase();
+      if (u !== acc.user || !(await checkPass(g("p")))) { ui.tries = (ui.tries || 0) + 1; if (ui.tries >= 5) { ui.until = Date.now() + 30000; ui.tries = 0; } throw new Error("Wrong username or password."); }
+      ui.tries = 0; ui.user = acc.user; note("Signed in as " + acc.name);
+      if (sheet?.kind === "login") { closeSheet(); unlock(); return; }
+    } else if (k === "acc-pass") {
+      if (!(await checkPass(g("o")))) throw new Error("Your current password is wrong.");
+      if (g("p").length < 6) throw new Error("Use a password of at least 6 characters.");
+      if (g("p") !== g("p2")) throw new Error("The new passwords don't match.");
+      acc.salt = rndHex(8); acc.hash = await pbkdf(g("p"), acc.salt); await saveAcc(); link.authed = false; note("Password changed");
+    }
+  } catch (e) { note(e.message, "alert"); return; }
+  if (sheet?.kind === "settings") renderSheet();
+}
+const accField = (n, l, t = "text", ex = "") => `<label class="fl"><span>${l}</span><input class="field" name="${n}" type="${t}" ${ex}></label>`;
+const accHtml = () => {
+  if (!acc) return `<section><h3>Account</h3><p class="note">Create an account to sign in to this hub and to link PumaDev. It stays on this device and is saved as a .account file.</p>
+    <form class="acc-f" data-form="acc-create">${accField("u", "Username", "text", 'autocomplete="username" required maxlength="24"')}${accField("n", "Display name", "text", 'maxlength="30"')}${accField("p", "Password", "password", 'autocomplete="new-password" required')}${accField("p2", "Confirm password", "password", 'autocomplete="new-password" required')}<button class="btn" type="submit">Create account</button></form>
+    <div class="btns"><button class="btn" data-act="acc-import">Log in with a .account file</button></div></section>`;
+  if (!ui.user) return `<section><h3>Account</h3><p class="note">You're signed out.</p>
+    <form class="acc-f" data-form="acc-login">${accField("u", "Username", "text", `autocomplete="username" required value="${esc(acc.user)}"`)}${accField("p", "Password", "password", 'autocomplete="current-password" required')}<button class="btn" type="submit">Log in</button></form></section>`;
+  return `<section><h3>Account</h3><div class="ann"><b>${esc(acc.name)}</b><span>@${esc(acc.user)} · created ${esc(String(acc.created).slice(0, 10))}</span></div>
+    <label class="swrow"><span>Require login to unlock<small class="note">Pushing up on the lock screen asks for your password.</small></span><input class="sw" type="checkbox" role="switch" data-pm="gate" ${state.puma.gate ? "checked" : ""}></label>
+    <form class="acc-f" data-form="acc-pass">${accField("o", "Current password", "password", 'autocomplete="current-password" required')}${accField("p", "New password", "password", 'autocomplete="new-password" required')}${accField("p2", "Confirm new password", "password", 'autocomplete="new-password" required')}<button class="btn" type="submit">Change password</button></form>
+    <div class="btns"><button class="btn" data-act="acc-export">Save .account file</button><button class="btn" data-act="acc-out">Log out</button><button class="btn" data-act="acc-del">${ui.delArm ? "Tap again to delete" : "Delete account"}</button></div></section>`;
+};
+$("#accFile").addEventListener("change", async (e) => {
+  const fl = e.target.files[0]; e.target.value = ""; if (!fl) return;
+  try {
+    if (acc && !ui.user) throw new Error("Log in first.");
+    const j = JSON.parse(await fl.text()), d = j?.data;
+    if (j?.puma !== "account" || j.app !== "_puma" || !/^[a-z0-9._-]{3,24}$/.test(d?.user) || !/^[0-9a-f]{8,64}$/.test(d?.hash) || !/^[0-9a-f]{8,64}$/.test(d?.salt)) throw new Error("That isn't a Puma .account file.");
+    acc = { user: d.user, name: String(d.name || d.user).slice(0, 30), salt: d.salt, hash: d.hash, created: String(d.created || new Date().toISOString()).slice(0, 30) };
+    await saveAcc(); ui.user = null; linkStop(); note("Account imported. Log in with its password."); if (sheet?.kind === "settings") renderSheet();
+  } catch (err) { note(err.message || "Couldn't read that file.", "alert"); }
+});
+
+const link = { pc: null, dc: null, status: "off", authed: false, code: "", buf: {}, tries: 0 };
+const rtcCfg = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+const iceDone = (pc) => new Promise((res) => { if (pc.iceGatheringState === "complete") return res(); const t = setTimeout(res, 2500); pc.addEventListener("icegatheringstatechange", () => { if (pc.iceGatheringState === "complete") { clearTimeout(t); res(); } }); });
+function linkStop() { try { link.dc?.close(); link.pc?.close(); } catch {} Object.assign(link, { pc: null, dc: null, status: "off", authed: false, code: "", buf: {} }); }
+const linkRefresh = () => { if (sheet?.kind === "settings") renderSheet(); };
+async function linkStart() {
+  linkStop();
+  try {
+    const pc = (link.pc = new RTCPeerConnection(rtcCfg));
+    link.dc = pc.createDataChannel("puma"); wireDc(link.dc);
+    pc.onconnectionstatechange = () => { const t = pc.connectionState; if (t === "connected") link.status = "linked"; else if (t === "failed") link.status = "failed"; else if (t === "disconnected" || t === "closed") { link.status = "closed"; link.authed = false; } linkRefresh(); };
+    await pc.setLocalDescription(await pc.createOffer()); await iceDone(pc);
+    link.code = btoa(JSON.stringify({ t: "puma-offer", sdp: pc.localDescription.sdp })); link.status = "waiting";
+  } catch (e) { link.status = "failed"; note("Couldn't start a link: " + e.message, "alert"); }
+  linkRefresh();
+}
+async function linkAccept(code) {
+  try { const o = JSON.parse(atob(code.replace(/\s+/g, ""))); if (o.t !== "puma-answer") throw new Error("That isn't a PumaDev reply code."); await link.pc.setRemoteDescription({ type: "answer", sdp: o.sdp }); note("Connecting"); }
+  catch (e) { note(e.message || "That code didn't work.", "alert"); }
+}
+function wireDc(dc) {
+  dc.onmessage = (e) => { try { const p = JSON.parse(e.data), a = (link.buf[p.c] ||= []); a[p.i] = p.d; if (a.filter((x) => x !== undefined).length === p.n) { delete link.buf[p.c]; linkRpc(JSON.parse(a.join(""))); } } catch {} };
+}
+async function linkSend(o) {
+  const dc = link.dc; if (!dc || dc.readyState !== "open") return;
+  const t = JSON.stringify(o), id = Math.random().toString(36).slice(2, 8), N = 14000, n = Math.max(1, Math.ceil(t.length / N));
+  for (let i = 0; i < n; i++) { while (dc.bufferedAmount > 1e6) await new Promise((r) => setTimeout(r, 20)); dc.send(JSON.stringify({ c: id, i, n, d: t.slice(i * N, (i + 1) * N) })); }
+}
+const publicState = () => { const c = JSON.parse(JSON.stringify(state)); c.puma.pin = null; if (c.wall.id === "custom") delete c.wall.url; return c; };
+function applyRemote(inc) {
+  if (!inc || typeof inc !== "object") throw new Error("No state received.");
+  const o = JSON.parse(JSON.stringify(inc)), keep = state.puma;
+  o.puma = { ...(o.puma || {}), pin: keep.pin, dm: keep.dm, gate: keep.gate, pkgs: keep.pkgs, pwgs: keep.pwgs, wdg: keep.wdg };
+  if (o.wall && o.wall.id === "custom" && !o.wall.url) o.wall = state.wall;
+  state = sanitize(o); persist(); regWidgets(); build(); renderPuma();
+}
+async function linkRpc(msg) {
+  const { id, m, a } = msg, reply = (ok, d, err) => linkSend({ id, ok, d, err });
+  try {
+    if (m === "hello") return reply(true, { hub: "6.1a", account: acc?.user || null });
+    if (m === "auth") {
+      if (!acc) throw new Error("This hub has no account yet.");
+      if (link.tries >= 5) throw new Error("Too many tries. Disconnect and link again.");
+      if (String(a?.user || "").toLowerCase() !== acc.user || !(await checkPass(String(a?.pass || "")))) { link.tries++; throw new Error("Wrong username or password."); }
+      link.tries = 0; link.authed = true; linkRefresh(); note("PumaDev signed in"); return reply(true, { name: acc.name });
+    }
+    if (!link.authed) throw new Error("Log in first.");
+    if (m === "get") return reply(true, { state: publicState(), pkgs: state.puma.pkgs, pwgs: state.puma.pwgs, wdg: state.puma.wdg });
+    if (m === "set") { applyRemote(a.state); note("PumaDev updated this hub"); return reply(true); }
+    if (m === "install") {
+      const bytes = Uint8Array.from(atob(a.b64), (c) => c.charCodeAt(0)), file = new File([bytes], String(a.name || "package.ppk"));
+      const r = /\.pwg$/i.test(file.name) ? await installPwg(file) : await installPpk(file);
+      renderPuma(); note("PumaDev installed " + r.rec.name); return reply(true, { id: r.rec.id, widgets: r.widgets, placed: r.placed });
+    }
+    if (m === "remove") { if (a.kind === "pwg") await removePwg(String(a.id)); else await removePkg(String(a.id)); renderPuma(); return reply(true); }
+    if (m === "pkg.get") {
+      const pwg = a.kind === "pwg", pid = String(a.id), rec = pwg ? state.puma.pwgs.find((k) => k.id === pid) : pkgRec(pid);
+      if (!rec) throw new Error("That package isn't installed.");
+      const pre = (pwg ? "wgt/" : "pkg/") + pid + "/", files = {};
+      for (const k of await fsKeys(pre)) files[k.slice(pre.length)] = b64(await fsGet(k));
+      const widgets = state.puma.wdg.filter((w) => w.src === (pwg ? "wgt" : "pkg") && w.pid === pid).map((w) => ({ id: w.wid, name: w.name, entry: w.entry, css: w.css, size: w.size }));
+      return reply(true, { manifest: pwg ? { id: pid, name: rec.name, version: rec.version, author: rec.author, app: rec.app, widgets } : { id: pid, name: rec.name, version: rec.version, author: rec.author, description: rec.desc, entry: rec.entry, widgets }, files });
+    }
+    throw new Error("Unknown command.");
+  } catch (e) { reply(false, null, e.message); }
+}
+const linkHtml = () => {
+  if (!acc) return `<section><h3>PumaDev</h3><p class="note">Create an account first (Account tab). PumaDev uses it to log in to this hub.</p></section>`;
+  if (!ui.user) return `<section><h3>PumaDev</h3><p class="note">Log in (Account tab) to link PumaDev.</p></section>`;
+  const st = { off: "Not linked", waiting: "Waiting for PumaDev", linked: "Linked", failed: "Link failed", closed: "Disconnected" }[link.status] || link.status;
+  return `<section><h3>PumaDev</h3><div class="ann"><b>${st}</b><span>${link.authed ? "PumaDev is signed in and can edit this hub." : "PumaDev also logs in with your account."}</span></div>
+    ${["off", "closed", "failed"].includes(link.status) ? '<div class="btns"><button class="btn" data-act="link-start">Create link code</button></div>' : ""}
+    ${link.code && link.status === "waiting" ? `<label class="fl"><span>1. Copy this code into PumaDev</span><textarea class="field" id="lk-code" readonly rows="4">${esc(link.code)}</textarea></label><div class="btns"><button class="btn" data-act="link-copy">Copy code</button></div><label class="fl"><span>2. Paste PumaDev's reply code</span><textarea class="field" id="lk-reply" rows="4" placeholder="Reply code"></textarea></label><div class="btns"><button class="btn" data-act="link-connect">Connect</button></div>` : ""}
+    ${["linked", "waiting"].includes(link.status) ? '<div class="btns"><button class="btn" data-act="link-stop">Disconnect</button></div>' : ""}
+    <p class="note">PumaDev links straight to this hub, device to device, with no server in between. Only link PumaDev on devices you trust.</p></section>`;
+};
+function shutdown() { stopCam(); ui.mode = "off"; renderPuma(); }
+$("#ppkFile").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { const r = /\.pwg$/i.test(f.name) ? await installPwg(f) : await installPpk(f); note(`${r.updated ? "Updated" : "Installed"} ${r.rec.name} ${r.rec.version}${r.widgets ? ` with ${r.widgets} widget${r.widgets > 1 ? "s" : ""}` : ""}${r.placed ? ", added to the display" : ""}`); if (ui.mode === "interface") renderPuma(); }
+  catch (err) { note(err.message || "That isn't a valid .ppk.", "alert"); }
+});
+$("#paccFile").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { await restorePacc(f); note("Restored " + f.name); } catch (err) { note(err.message || "That isn't a valid .pacc.", "alert"); }
+});
+
+const R = {
+  weather: () => {
+    const w = state.data.weather, now = new Date().getHours(), off = [0, 1, 2, 1, -1, -2];
+    const hrs = (wx.hrs.length ? wx.hrs : off.map((o, i) => ({ h: (now + i * 2) % 24, t: w.temp + o }))).map((x) => `<div>${String(x.h).padStart(2, "0")}:00<b>${Math.round(x.t)}°</b></div>`).join("");
+    return `<div class="in"><div class="top"><span class="eyebrow">${esc(w.city)}</span><span class="tag">${esc(wx.status)}</span></div>
+      <div class="wx-main"><div class="bignum">${Math.round(w.temp)}<sup>°C</sup></div>
+      <div class="wx-cond">${ic(COND_ICON[w.cond])}${esc(w.cond)}</div><div class="wx-range">H ${Math.round(w.hi)}° · L ${Math.round(w.lo)}°</div></div>
+      <div class="hours" aria-label="Next hours">${hrs}</div></div>`;
+  },
+  maps: (id) => {
+    const m = mapPos(), d = 0.02, f = (v) => v.toFixed(4);
+    const src = `https://www.openstreetmap.org/export/embed.html?bbox=${f(m.lon - d * 1.6)},${f(m.lat - d)},${f(m.lon + d * 1.6)},${f(m.lat + d)}&layer=mapnik&marker=${f(m.lat)},${f(m.lon)}`;
+    return `<div class="in mp"><div class="top"><span class="eyebrow">${esc(m.label)}</span><a class="tag" href="https://www.openstreetmap.org/?mlat=${f(m.lat)}&mlon=${f(m.lon)}#map=14/${f(m.lat)}/${f(m.lon)}" target="_blank" rel="noopener noreferrer">Open</a></div>
+      <iframe class="mp-frame" title="Map of ${esc(m.label)}" src="${src}" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      <form class="sr-form" data-form="maps"><input class="field" id="mp-in-${id}" placeholder="Search a place" autocomplete="off" aria-label="Search a place" maxlength="80"><button class="iconbtn solid" type="submit" aria-label="Search">${ic("search")}</button></form></div>`;
+  },
+  facts: () => `<div class="in"><div class="top"><span class="eyebrow">${esc(fact.k)}</span></div><p class="fact-t">${esc(fact.t)}</p><button class="btn" data-act="fact-next">Another one</button></div>`,
+  photos: () => `<div class="in ph"><div class="top"><span class="eyebrow">Photos</span><span class="tag">${photos.length ? pi + 1 + " of " + photos.length : "Empty"}</span></div>
+    ${photos.length ? `<div class="ph-view" style="background-image:url(${photos[pi]})" role="img" aria-label="Photo ${pi + 1} of ${photos.length}"></div>` : '<div class="ph-view empty">No photos yet</div>'}
+    <div class="btns"><button class="iconbtn" data-act="ph-prev" aria-label="Previous photo">${ic("prev")}</button><button class="iconbtn" data-act="ph-next" aria-label="Next photo">${ic("next")}</button><button class="btn" data-act="ph-add">Add photos</button>${photos.length ? `<button class="iconbtn" data-act="ph-del" aria-label="Remove this photo">${ic("x")}</button>` : ""}</div></div>`,
+  news: () => `<div class="in"><div class="top"><span class="eyebrow">News</span><span class="tag">${esc(news.err || "Hacker News")}</span></div>
+    <ul class="nw-list">${news.items.length ? news.items.map((x) => `<li><a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a><small>${x.p ?? 0} pts · ${x.c ?? 0} comments</small></li>`).join("") : `<li class="empty">${news.err ? "Can't reach the news feed from here." : "Loading headlines"}</li>`}</ul>
+    <button class="btn" data-act="news-refresh">Refresh</button></div>`,
+  debug: () => {
+    const rows = [["Viewport", `${innerWidth} × ${innerHeight}`], ["Pixel ratio", devicePixelRatio + "×"], ["Frame rate", dbg.fps + " fps"], ["Theme / colours", state.theme + " / " + state.wall.id], ["Tiles", Object.entries(state.slots).filter(([k]) => vis().includes(k)).map(([k, v]) => k + ":" + v).join(" ")], ["Save size", (JSON.stringify(state).length / 1024).toFixed(1) + " KB"], ["Weather", wx.status], ["News", news.err || news.items.length + " items"]];
+    return `<div class="in"><div class="top"><span class="eyebrow">Debug</span><span class="tag">experimental</span></div><dl class="dbg-dl">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl><pre class="dbg-log">${esc(dbg.lines.slice(-8).join("\n") || "No events yet")}</pre></div>`;
+  },
+  todo: (id) => {
+    const l = state.data.todo, done = l.filter((x) => x.done).length;
+    const items = l.length
+      ? l.map((x) => `<li class="${x.done ? "done" : ""}"><button class="chk" data-act="td-toggle" data-id="${esc(x.id)}" role="checkbox" aria-checked="${x.done}" aria-label="${esc(x.t)}">${x.done ? ic("check") : ""}</button><span>${esc(x.t)}</span><button class="rm" data-act="td-del" data-id="${esc(x.id)}" aria-label="Delete ${esc(x.t)}">${ic("x")}</button></li>`).join("")
+      : '<li class="empty">Nothing to do. Add a task below.</li>';
+    return `<div class="in"><div class="top"><span class="eyebrow">Todo</span><span class="tag">${done} of ${l.length} done</span></div><ul class="td-list">${items}</ul>
+      <form class="td-add" data-form="td-add"><input class="field" id="td-in-${id}" placeholder="Add a task" autocomplete="off" aria-label="New task" maxlength="120"><button class="iconbtn solid" type="submit" aria-label="Add task">${ic("plus")}</button></form></div>`;
+  },
+  device: () => {
+    const { rows, c, online } = devInfo();
+    return `<div class="in"><div class="top"><span class="eyebrow">This device</span></div>
+      <div class="dv-top">${ic("wifi")}<div><div class="dv-state">${online ? "Online" : "Offline"}</div><div class="dv-sub">${esc(c.effectiveType ? "Connection quality " + c.effectiveType : "Connection quality not shared")}</div></div></div>
+      <div class="dv-grid">${group("Network", rows.net)}${group("Display", rows.disp)}${group("System", rows.sys)}${rows.bat ? group("Battery", rows.bat) : ""}</div>
+      <p class="note">Browsers share connection quality and device details, not Wi-Fi names.</p></div>`;
+  },
+  search: (id) => `<div class="in sr"><div class="sr-title">Search Google</div>
+    <form class="sr-form" data-form="search"><input class="field" id="sr-in-${id}" type="search" placeholder="Search the web" autocomplete="off" aria-label="Search the web">
+    <a class="iconbtn solid" id="sr-go-${id}" href="https://www.google.com/" target="_blank" rel="noopener noreferrer" aria-label="Search on Google">${ic("search")}</a></form></div>`,
+  clock: () => { const k = clockText(); return `<div class="in ck"><div class="eyebrow">Local time</div><div class="ck-time" data-clock-t>${esc(k.t)}</div><div class="ck-date" data-clock-d>${esc(k.d)}</div></div>`; },
+  notes: (id) => `<div class="in nt"><div class="top"><span class="eyebrow">Notes</span></div><textarea class="field" id="nt-in-${id}" placeholder="Jot something down" aria-label="Notes" maxlength="4000">${esc(state.data.notes)}</textarea></div>`,
+};
+const inner = (id) => { const t = state.slots[id]; return `<button class="gear" data-act="gear" data-slot="${id}" aria-label="Options for ${esc(TYPES[t].name)}">${ic("dots").replace("<svg ", '<svg style="fill:currentColor;stroke:none" ')}</button>` + R[t](id); };
+const renderSlot = (id) => { const w = $(`[data-w="${id}"]`); if (w) w.innerHTML = inner(id); };
+const renderType = (type) => { for (const id in SLOTS) if (state.slots[id] === type) renderSlot(id); appRefresh(type); };
+
+function dockHtml() {
+  const b = (a, label, icon) => `<button class="dockbtn" data-act="${a}" aria-label="${label}"><span class="di">${ic(icon)}</span><span class="dl">${label}</span></button>`;
+  const kiosk = state.puma.dm && !ui.edit;
+  if (kiosk) return `<div class="dock" data-glass="1" data-rmax="32">${b("to-puma", "Exit", "exit")}</div>`;
+  return `<div class="dock" data-glass="1" data-rmax="32">${b("to-puma", "Home", "home")}${b("open-settings", "Settings", "sliders")}${b("night", state.night ? "Day" : "Night", state.night ? "sun" : "moon")}</div>`;
+}
+let curWall = "";
+function applyDevice() {
+  const dv = DEVS[state.device] || DEVS.auto, el = $("#device"), wr = $("#dwrap");
+  let W = innerWidth, H = innerHeight;
+  if (dv.w) {
+    const m = innerWidth >= dv.w + 24 && innerHeight >= dv.h + 24 ? 24 : 0, k = Math.min(1, (innerWidth - m) / dv.w, (innerHeight - m) / dv.h);
+    wr.classList.add("fixed"); el.classList.add("fixed"); el.classList.toggle("framed", m > 0);
+    el.style.cssText = `--dw:${dv.w}px;--dh:${dv.h}px;--vw:${dv.w / 100}px;--vh:${dv.h / 100}px;--rr:${dv.r}px;transform:translate(-50%,-50%) scale(${k})`;
+    W = dv.w; H = dv.h;
+  } else { wr.classList.remove("fixed"); el.classList.remove("fixed", "framed"); el.removeAttribute("style"); }
+  stage.dataset.bp = W < 600 ? "phone" : W < 1000 ? "tablet" : "wide";
+  if (H < 560) stage.dataset.short = ""; else delete stage.dataset.short;
+}
+addEventListener("resize", () => applyDevice());
+function applyLook() {
+  applyDevice();
+  stage.dataset.theme = state.theme;
+  stage.dataset.set = state.wall.id;
+  stage.style.setProperty("--r", state.radius + "px");
+  const url = state.wall.id === "custom" ? state.wall.url : "";
+  if (url !== curWall) { curWall = url; if (url) wall.src = url; else wall.removeAttribute("src"); }
+  stage.classList.toggle("photo", !!url);
+  stage.toggleAttribute("data-night", !!state.night);
+  stage.style.setProperty("--tint", state.tint);
+  pushTheme();
+  stage.classList.toggle("dbg", state.exp.debug);
+  stage.classList.toggle("kiosk", state.puma.dm && !ui.edit);
+}
+function build() {
+  board.innerHTML = vis().map((id) => `<section class="slot s-${id} sz-${state.sizes[id]}" data-glass="1" data-slot="${id}"><div class="w" data-w="${id}">${inner(id)}</div></section>`).join("") + `<div class="dockcell">${dockHtml()}</div>`;
+  board.classList.toggle("more", state.exp.more);
+  applyLook();
+}
+
+/* ---------- sheets ---------- */
+let sheet = null, lastFocus = null;
+let tt;
+function note(msg, icon = "check") {
+  const t = $("#toast");
+  t.innerHTML = ic(icon === "alert" ? "alert" : "check") + `<span>${esc(msg)}</span>`;
+  t.hidden = false; clearTimeout(tt); tt = setTimeout(() => { t.hidden = true; dirty = true; }, 3400); dirty = true;
+}
+const chipSet = (items) => `<div class="chips">${items}</div>`;
+const fld = (id, label, val, path, type = "text", extra = "") => `<label class="fl"><span>${label}</span><input class="field" id="${id}" data-opt="${path}" type="${type}" value="${esc(val)}" ${extra}></label>`;
+const trackText = () => state.data.music.tracks.map((t) => `${t.t} — ${t.a} — ${fmt(t.d)}`).join("\n");
+
+const notesHtml = () => `<section><h3>Announcements</h3>
+    <div class="ann"><b>Puma for Python</b><span>A Python version of Slab6 &amp; Puma6 is planned and will be released eventually.</span></div>
+    <div class="ann"><b>Puma Assistant</b><span>An AI assistant is planned for a future update.</span></div></section>
+    <section><h3>6.1a · alpha.6.1.0.2410</h3><ul class="rn">
+      <li>New Slab6 look based on Lumen OS 2: solid colour slabs, giant numerals, seven colour themes and night and day mode.</li>
+      <li>Puma launcher with a lock screen, colour drawers, web apps and built-in apps: News, Weather, Clock, Camera, Photos, Marketplace and Settings.</li>
+      <li>More built-in apps: Calendar, Maps, Fun facts, Notes, Tasks and Calculator.</li>
+      <li>Display Mode with a keep-on option, a 4-digit passcode, an Exit button, and triple-tap night mode.</li>
+      <li>Live weather, news, fun facts and map widgets, plus a photo slideshow, todo, notes, clock, search and device info.</li>
+      <li>Resizable widgets (small, regular, large) and Add widget, up to 9 extra tiles.</li>
+      <li>Fits any screen, with presets for iPhone 17 Pro, iPad mini (A17 Pro) and Echo Show 5.</li>
+      <li>Removed: the smart home controls and Now playing widgets.</li>
+      <li>Glass and Stained glass themes, with a colour picker for the glass.</li>
+      <li>Install apps from .ppk files in the Marketplace. Apps keep their saved info in a .account file.</li>
+      <li>Install widget packages from .pwg files, so installed apps can show their own widgets on the Display Mode screen. Installed widgets are added to the display and listed in Settings and Marketplace.</li>
+      <li>Accounts: create an account, log in, sign in to unlock, and save it as a .account file. PumaDev can link to this hub to edit it remotely and build .ppk and .pwg packages.</li>
+      <li>Lynk, an app in Marketplace that chats with Llama 3.2 1B on your own computer through Ollama.</li>
+      <li>Shut down asks you to save a .pacc backup first.</li>
+      <li>Known: this is an alpha. The passcode is a convenience lock, not strong security.</li></ul></section>`;
+const S = {
+  settings: () => {
+    const tab = sheet.tab || "look", sec = S.settingsAll().match(/<section>.*?<\/section>/gs) || [];
+    const map = { Theme: "look", "Slab colours": "look", Shape: "look", Screen: "display", "Display Mode": "display", Widgets: "widgets", "Widgets from files": "widgets", "Your page": "data", Account: "account", PumaDev: "link", About: "about" };
+    const tabs = [["look", "Look"], ["display", "Display"], ["widgets", "Widgets"], ["data", "Data"], ["account", "Account"], ["link", "PumaDev"], ["about", "About"], ["notes", "Release notes"]];
+    const body = tab === "notes" ? notesHtml() : sec.filter((x) => map[(x.match(/<h3>(.*?)<\/h3>/) || [])[1]] === tab).join("");
+    return `<div class="sh-head"><h2>Settings</h2><button class="iconbtn" data-act="close" aria-label="Close">${ic("x")}</button></div>
+      <div class="chips" role="tablist" aria-label="Settings sections">${tabs.map(([k, n]) => `<button class="chip" role="tab" aria-selected="${tab === k}" aria-pressed="${tab === k}" data-act="stab" data-v="${k}">${n}</button>`).join("")}</div>${body}`;
+  },
+  login: () => `<div class="sh-head"><h2>Sign in</h2><button class="iconbtn" data-act="close" aria-label="Cancel">${ic("x")}</button></div>
+    <p class="note">Enter your password to unlock Puma, ${esc(acc.name)}.</p>
+    <form class="acc-f" data-form="acc-login"><label class="fl"><span>Password for ${esc(acc.user)}</span><input class="field" name="p" type="password" autocomplete="current-password" required autofocus></label><button class="btn" type="submit">Unlock</button></form>`,
+  shutdown: () => `<div class="sh-head"><h2>Shut down</h2><button class="iconbtn" data-act="close" aria-label="Cancel">${ic("x")}</button></div>
+    <p>Save a backup before shutting down? A .pacc file keeps your page, accounts, installed apps, photos and wallpapers in one archive.</p>
+    <div class="btns"><button class="btn" data-act="sd-save">Save .pacc and shut down</button><button class="btn" data-act="sd-now">Shut down without saving</button><button class="btn" data-act="close">Cancel</button></div>`,
+  pass: () => `<div class="sh-head"><h2>${esc(pad.title)}</h2><button class="iconbtn" data-act="close" aria-label="Cancel">${ic("x")}</button></div>
+    <div class="pin-dots" aria-label="${pad.buf.length} of 4 digits">${[0, 1, 2, 3].map((i) => `<i class="${i < pad.buf.length ? "on" : ""}"></i>`).join("")}</div>
+    <p class="note" role="status" style="text-align:center;min-height:1.4em">${esc(pad.msg)}</p>
+    <div class="pin-pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "del"].map((k) => (k === "" ? "<span></span>" : `<button class="pk" data-act="key" data-v="${k}" aria-label="${k === "del" ? "Delete" : k}">${k === "del" ? ic("back") : k}</button>`)).join("")}</div>`,
+  ring: () => `<div class="sh-head"><h2>${esc(sheet.msg)}</h2></div><div class="big-num">${lockTime().h}:${lockTime().m}</div>
+    <div class="btns"><button class="btn" data-act="ring-stop">Dismiss</button><button class="btn" data-act="ring-snooze">Snooze 5 min</button></div>`,
+  egg: () => `<div class="sh-head"><h2>Hub 6</h2><button class="iconbtn" data-act="close" aria-label="Close">${ic("x")}</button></div>
+    <div class="egg" data-act="egg-tap" role="button" aria-label="Easter egg. Tap to spin, press and hold for a surprise."><svg viewBox="0 0 200 200" aria-hidden="true">${[0, 1, 2, 3, 4].map((i) => { const r = 92 - i * 17, L = 2 * Math.PI * r; return `<circle cx="100" cy="100" r="${r}" fill="none" stroke="${EGGC[(i + egg.c) % 5]}" stroke-width="14" stroke-dasharray="${L * 0.72} ${L * 0.28}" stroke-linecap="round" style="transform-origin:100px 100px;transform:rotate(${egg.a * (i % 2 ? -1 : 1) * (i + 1)}deg)"/>`; }).join("")}<text x="100" y="124" text-anchor="middle" font-size="80" font-weight="800" fill="currentColor" style="font-family:var(--f-display)">6</text></svg></div>
+    <p class="note" data-egg-msg>${esc(egg.msg)}</p>`,
+  settingsAll: () => `<div class="sh-head"><h2>Settings</h2><button class="iconbtn" data-act="close" aria-label="Close">${ic("x")}</button></div>
+    <section><h3>Theme</h3><div class="chips" role="radiogroup" aria-label="Theme">${THEMES.map((t) => `<button class="chip" role="radio" aria-checked="${state.theme === t}" aria-pressed="${state.theme === t}" data-act="theme" data-v="${t}">${THEME_NAMES[t]}</button>`).join("")}</div>${state.theme === "stained" ? `<label class="fl"><span>Glass colour</span><input type="color" class="field cp" data-tint value="${state.tint}" aria-label="Glass colour"></label>` : ""}</section>
+    <section><h3>Slab colours</h3><div class="wps">${PRESETS.map((id) => `<button class="wp" data-act="wall" data-id="${id}" aria-pressed="${state.wall.id === id}" data-set="${id}"><span>${PRESET_NAMES[id]}</span></button>`).join("")}
+      ${state.wall.id === "custom" ? `<button class="wp" aria-pressed="true" style="background-image:url(${state.wall.url})"><span>Yours</span></button>` : ""}
+      <button class="wp up" data-act="wall-upload">Upload a picture</button></div></section>
+    <section><h3>Shape</h3>
+      <div class="srow"><span class="lbl">Roundness</span><input class="rng" type="range" data-k="radius" min="8" max="48" step="2" value="${state.radius}" style="--p:${((state.radius - 8) / 40) * 100}%" aria-label="Roundness"><output id="out-radius">${state.radius}px</output></div></section>
+    <section><h3>Your page</h3><p class="note">Save your theme, slab colours, widgets and their contents as a .smrtpage file, or open one you saved before.</p>
+      <div class="btns"><button class="btn" data-act="save-file">Save .smrtpage</button><button class="btn" data-act="open-file">Open save file</button></div>
+      <p class="note">A .pacc backup holds your page, any .account files, installed apps, photos and wallpapers in one archive.</p>
+      <div class="btns"><button class="btn" data-act="pacc-save">Back up (.pacc)</button><button class="btn" data-act="pacc-open">Restore .pacc</button></div>
+      <button class="link" data-act="reset">Reset everything</button></section>
+    <section><h3>Screen</h3><div class="chips">${Object.entries(DEVS).map(([k, d]) => `<button class="chip" data-act="device" data-v="${k}" aria-pressed="${state.device === k}">${d.n}<small>${d.w ? d.w + " × " + d.h : "Fits this screen"}</small></button>`).join("")}</div><p class="note">Auto fills whatever screen this is opened on. A preset shows the hub at that device's size, scaled down to fit your window.</p></section>
+    <section><h3>Display Mode</h3>
+      <label class="swrow"><span>Keep Display Mode on<small class="note">The hub stays on the widget display. Interface mode needs the passcode, if you set one.</small></span><input class="sw" type="checkbox" role="switch" data-pm="dm" ${state.puma.dm ? "checked" : ""}></label>
+      ${state.puma.dm ? `<div class="btns"><button class="btn" data-act="pin-set">${state.puma.pin ? "Change passcode" : "Set passcode"}</button>${state.puma.pin ? '<button class="btn" data-act="pin-remove">Remove passcode</button>' : ""}</div><p class="note">The passcode only locks the Puma interface in this page. It is a convenience lock, not strong security.</p><p class="note">While Display Mode is kept on, triple-tap the top-right corner of the top widget to switch night and day mode.</p>` : ""}</section>
+    <section><h3>Widgets</h3><p class="note">${state.extra} of 9 extra widgets added.</p>
+      ${sheet.adding ? `<span class="lbl">How many widgets?</span><div class="chips">${[1, 2, 3].map((n) => `<button class="chip" data-act="add-n" data-v="${n}" ${state.extra + n > 9 ? "disabled" : ""}>${n}</button>`).join("")}</div>` : `<div class="btns"><button class="btn" data-act="add-ask" ${state.extra >= 9 ? "disabled" : ""}>Add widget</button></div>`}</section>
+    <section><h3>Widgets from files</h3>${state.puma.wdg.length ? `<ul class="td-list mk">${state.puma.wdg.map((w) => `<li>${ic("widgets")}<span><b>${esc(w.name)}</b><small class="note">From ${esc(w.appName)}</small></span><button class="btn" data-act="mk-add" data-type="pw:${esc(w.id)}" ${state.extra >= 9 ? "disabled" : ""}>Add</button></li>`).join("")}</ul>` : '<p class="note">No widgets from files yet. Install a .pwg or .ppk in Marketplace, Install from File.</p>'}</section>
+    ${accHtml()}${linkHtml()}
+    <section><h3>About</h3><dl class="abt">
+      <div><dt>Product</dt><dd>Smart Home Hub</dd></div>
+      <div><dt>Hub version</dt><dd><button data-act="egg">6.1a</button></dd></div>
+      <div><dt>Build number</dt><dd><button data-act="build">alpha.6.1.0.2410</button></dd></div></dl>
+      <p class="note">© 2026 Smart Home Hub. All rights reserved.</p>
+      <p class="note">Slab look inspired by Lumen OS 2 (MIT). Type: Bricolage Grotesque (SIL OFL). Weather data by Open-Meteo.com (CC BY 4.0). Headlines from Hacker News via Algolia. Maps © OpenStreetMap contributors. Facts from Wikipedia.</p>
+      <div class="logo" role="img" aria-label="Slab6 and Puma6"><b>Slab6</b><span>&amp; Puma6</span></div></section>`,
+  store: () => `<div class="sh-head"><h2>Widget store</h2><button class="iconbtn" data-act="close" aria-label="Close">${ic("x")}</button></div>
+    <p class="note">Choose a widget, then pick the tile it should appear in.</p>
+    <div class="cards">${typeList().map(([k, t]) => `<button class="card" data-act="store-pick" data-type="${k}" aria-pressed="${sheet.pick === k}">${ic(t.icon)}<b>${t.name}</b><span>${t.desc}</span></button>`).join("")}</div>
+    ${sheet.pick ? `<section><h3>Show ${TYPES[sheet.pick].name} in</h3>${chipSet(Object.entries(SLOTS).filter(([s]) => vis().includes(s)).map(([s, n]) => `<button class="chip" data-act="place" data-slot="${s}" data-type="${sheet.pick}" aria-pressed="${state.slots[s] === sheet.pick}">${n}<small>${TYPES[state.slots[s]].name} now</small></button>`).join(""))}</section>` : ""}`,
+  widget: () => {
+    const slot = sheet.slot, type = state.slots[slot], d = state.data;
+    let opts = "";
+    if (type === "weather") {
+      const w = d.weather;
+      opts = `<section><h3>Weather values</h3><div class="fgrid">${fld("wx-city", "City", w.city, "weather.city", "text", 'maxlength="40"')}${fld("wx-temp", "Temperature °C", w.temp, "weather.temp", "number", 'step="1" min="-60" max="60"')}
+        <label class="fl"><span>Conditions</span><select class="field" id="wx-cond" data-opt="weather.cond">${COND.map((c) => `<option ${c === w.cond ? "selected" : ""}>${c}</option>`).join("")}</select></label>
+        ${fld("wx-hi", "High °C", w.hi, "weather.hi", "number", 'step="1" min="-60" max="60"')}${fld("wx-lo", "Low °C", w.lo, "weather.lo", "number", 'step="1" min="-60" max="60"')}</div>
+        <div class="btns"><button class="btn" data-act="wx-refresh">Refresh now</button><button class="btn" data-act="wx-geo">Use my location</button></div><p class="note">Weather is live from Open-Meteo for the city above. If the page is offline, these values are shown instead.</p></section>`;
+    } else if (type === "news") {
+      opts = `<section><h3>Headlines</h3><div class="btns"><button class="btn" data-act="news-refresh">Refresh now</button></div><p class="note">Top Hacker News stories, refreshed every 15 minutes.</p></section>`;
+    } else if (type === "maps") {
+      opts = `<section><h3>Map</h3><div class="btns"><button class="btn" data-act="maps-reset">Follow weather location</button></div><p class="note">Search any place in the map tile. Map data from OpenStreetMap contributors.</p></section>`;
+    } else if (type === "facts") {
+      opts = `<section><h3>Facts</h3><div class="btns"><button class="btn" data-act="fact-next">Show another</button></div><p class="note">A mix of built-in facts and, when online, events from this day in history via Wikipedia.</p></section>`;
+    } else if (type === "photos") {
+      opts = `<section><h3>Photos</h3><div class="btns"><button class="btn" data-act="ph-add">Add photos</button><button class="btn" data-act="ph-clear">Remove all</button></div><p class="note">Up to 12 photos, shrunk and kept in this browser only. They are not part of the .smrtpage save.</p></section>`;
+    } else if (type === "debug") {
+      opts = `<section><h3>Debug</h3><p class="note">Live diagnostics for this page. Turn debug widgets off under Settings, Experimental.</p></section>`;
+    } else if (type === "clock") {
+      opts = `<section><h3>Clock format</h3>${chipSet(`<button class="chip" data-act="h24" data-v="1" aria-pressed="${d.clock.h24}">24 hour</button><button class="chip" data-act="h24" data-v="0" aria-pressed="${!d.clock.h24}">12 hour</button>`)}</section>`;
+    } else if (type === "todo") {
+      opts = `<section><h3>List</h3><div class="btns"><button class="btn" data-act="td-clear">Clear completed</button></div></section>`;
+    } else if (type === "notes") {
+      opts = `<section><h3>Note</h3><div class="btns"><button class="btn" data-act="nt-clear">Clear note</button></div></section>`;
+    } else {
+      opts = `<p class="note">${type === "device" ? "This widget reads what your browser shares about the connection, screen and system." : type === "search" ? "Searches open Google in a new tab." : "These switches and the heating slider are demo controls. They remember their state in your save file."}</p>`;
+    }
+    return `<div class="sh-head"><h2>${SLOTS[slot]}</h2><button class="iconbtn" data-act="close" aria-label="Close">${ic("x")}</button></div>
+      <section><h3>Show</h3>${chipSet(typeList().map(([k, t]) => `<button class="chip" data-act="set-type" data-slot="${slot}" data-type="${k}" aria-pressed="${type === k}">${t.name}</button>`).join(""))}</section><section><h3>Size</h3><div class="seg" role="radiogroup" aria-label="Widget size">${Object.entries(SZ).map(([k, n]) => `<button role="radio" aria-checked="${state.sizes[slot] === k}" data-act="size" data-slot="${slot}" data-v="${k}">${n}</button>`).join("")}</div>${slot[0] === "x" ? `<button class="link" data-act="x-remove" data-slot="${slot}">Remove this widget</button>` : ""}</section>${opts}`;
+  },
+};
+const sheetLabel = () => (sheet.kind === "settings" ? "Settings" : sheet.kind === "store" ? "Widget store" : sheet.kind === "egg" ? "Easter egg" : sheet.kind === "pass" ? "Passcode" : sheet.kind === "shutdown" ? "Shut down" : sheet.kind === "login" ? "Sign in" : sheet.kind === "ring" ? "Alarm" : SLOTS[sheet.slot] + " options");
+function renderSheet() {
+  if (!sheet) return;
+  const old = $(".sb", scrim), top = old ? old.scrollTop : 0;
+  scrim.innerHTML = `<div class="sheet" data-glass="1" data-rmax="36" data-dark="0.4"><div class="sb" role="dialog" aria-modal="true" aria-label="${sheetLabel()}" tabindex="-1">${S[sheet.kind]()}</div></div>`;
+  const sb = $(".sb", scrim); sb.scrollTop = top; sb.focus({ preventScroll: true });
+}
+function openSheet(s) { lastFocus = document.activeElement; sheet = s; scrim.hidden = false; stage.classList.add("sheeted"); renderSheet(); dirty = true; }
+function closeSheet() { beepStop(); sheet = null; scrim.hidden = true; scrim.innerHTML = ""; stage.classList.remove("sheeted"); dirty = true; try { lastFocus?.focus?.(); } catch {} }
+const changed = (full) => { persist(); if (full) build(); else applyLook(); renderSheet(); };
+
+/* ---------- files ---------- */
+async function saveFile() {
+  const json = JSON.stringify(state, null, 2), base = "my-smart-home";
+  let dl = null;
+  try { dl = await window.claude?.use?.("downloads"); } catch {}
+  if (dl) {
+    try { await dl.save({ filename: base + ".smrtpage", data: json }); note("Saved " + base + ".smrtpage"); return; }
+    catch (err) {
+      if (err?.code === "declined") return;
+      if (err?.code === "rejected_extension" || err?.code === "extension_not_enabled") {
+        try { await dl.save({ filename: base + ".smrtpage.json", data: json }); note("Saved as " + base + ".smrtpage.json. Rename it to .smrtpage if you like; both open here."); }
+        catch (e2) { if (e2?.code !== "declined") note("Saving is not available in this view.", "alert"); }
+        return;
+      }
+      note("Saving is not available in this view.", "alert"); return;
+    }
+  }
+  const url = URL.createObjectURL(new Blob([json], { type: "application/json" })), a = document.createElement("a");
+  a.href = url; a.download = base + ".smrtpage"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  note("Saved " + base + ".smrtpage");
+}
+$("#openFile").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  if (f.size > 30e6) return note("That file is too large to be a save file.", "alert");
+  try {
+    const o = JSON.parse(await f.text());
+    if (!o || o.format !== "smrtpage") throw new Error("not a save");
+    state = sanitize(o); mu.pos = 0; mu.playing = false; changed(true); note("Loaded " + f.name);
+  } catch { note("That is not a .smrtpage save file.", "alert"); }
+});
+$("#photoFile").addEventListener("change", async (e) => {
+  const fs = [...e.target.files]; e.target.value = "";
+  const first = photos.length;
+  for (const f of fs) {
+    if (photos.length >= 12) { note("Up to 12 photos.", "alert"); break; }
+    try { photos.push(await fileToPhoto(f)); } catch (err) { note(err.message, "alert"); }
+  }
+  if (photos.length > first) { pi = first; savePhotos(); renderType("photos"); }
+});
+$("#wallFile").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try { state.wall = { id: "custom", url: await fileToWall(f) }; changed(false); note("Photo backdrop updated"); }
+  catch (err) { note(err.message, "alert"); }
+});
+
+/* ---------- music ui ---------- */
+function muUI() {
+  const t = curTrack();
+  $$("[data-mu-title]").forEach((n) => (n.textContent = t.t));
+  $$("[data-mu-artist]").forEach((n) => (n.textContent = t.a));
+  $$("[data-prog]").forEach((n) => (n.style.width = (mu.pos / t.d) * 100 + "%"));
+  $$("[data-pos]").forEach((n) => (n.textContent = fmt(mu.pos)));
+  $$("[data-dur]").forEach((n) => (n.textContent = fmt(t.d)));
+  $$(".mu-art").forEach((n) => n.style.setProperty("--h", hueOf()));
+  $$("[data-mu-play]").forEach((n) => { n.innerHTML = ic(mu.playing ? "pause" : "play"); n.setAttribute("aria-label", mu.playing ? "Pause" : "Play"); });
+}
+const skip = (d) => { const m = state.data.music; m.i = (m.i + d + m.tracks.length) % m.tracks.length; mu.pos = 0; persist(); muUI(); };
+setInterval(() => { if (mu.playing) { mu.pos += 0.5; if (mu.pos >= curTrack().d) skip(1); else muUI(); } }, 500);
+setInterval(() => { const k = clockText(); $$("[data-clock-t]").forEach((n) => (n.textContent = k.t)); $$("[data-clock-d]").forEach((n) => (n.textContent = k.d)); }, 1000);
+
+/* ---------- events ---------- */
+function keepFocus(sel, slotEl) { const n = slotEl ? $(sel, slotEl) : $(sel); n?.focus(); }
+stage.addEventListener("click", (e) => {
+  if (e.target === scrim) return closeSheet();
+  const el = e.target.closest("[data-act]");
+  if (!el || !stage.contains(el)) return;
+  const a = el.dataset.act, id = el.dataset.id, slot = el.dataset.slot || el.closest("[data-w]")?.dataset.w, type = el.dataset.type;
+  const m = state.data.music, td = state.data.todo;
+  switch (a) {
+    case "gear": openSheet({ kind: "widget", slot }); break;
+    case "open-settings": openSheet({ kind: "settings" }); break;
+    case "open-store": openSheet({ kind: "store" }); break;
+    case "open-file": $("#openFile").click(); break;
+    case "save-file": saveFile(); break;
+    case "close": closeSheet(); break;
+    case "wall": state.wall = { id }; changed(false); break;
+    case "theme": if (THEMES.includes(el.dataset.v)) { state.theme = el.dataset.v; changed(false); } break;
+    case "wall-upload": $("#wallFile").click(); break;
+    case "reset": state = defaults(); mu.pos = 0; mu.playing = false; changed(true); note("Back to the defaults"); break;
+    case "store-pick": sheet.pick = type; renderSheet(); break;
+    case "place": case "set-type":
+      state.slots[slot] = type; renderSlot(slot); persist(); renderSheet();
+      if (a === "place") note(`${TYPES[type].name} is now in ${SLOTS[slot].toLowerCase()}`);
+      break;
+    case "h24": state.data.clock.h24 = el.dataset.v === "1"; renderType("clock"); persist(); renderSheet(); break;
+    case "td-toggle": { const it = td.find((x) => x.id === id); if (it) it.done = !it.done; persist(); renderType("todo"); keepFocus(`[data-act="td-toggle"][data-id="${id}"]`, $(`[data-w="${slot}"]`)); break; }
+    case "td-del": { state.data.todo = td.filter((x) => x.id !== id); persist(); renderType("todo"); keepFocus(`#td-in-${slot}`); break; }
+    case "td-clear": state.data.todo = td.filter((x) => !x.done); persist(); renderType("todo"); break;
+    case "nt-clear": state.data.notes = ""; persist(); renderType("notes"); break;
+    case "fact-next": nextFact(); break;
+    case "maps-reset": state.data.maps = { label: "", lat: null, lon: null }; persist(); renderType("maps"); break;
+    case "ph-add": $("#photoFile").click(); break;
+    case "ph-prev": if (photos.length) { pi = (pi - 1 + photos.length) % photos.length; renderType("photos"); } break;
+    case "ph-next": if (photos.length) { pi = (pi + 1) % photos.length; renderType("photos"); } break;
+    case "ph-del": photos.splice(pi, 1); pi = Math.min(pi, Math.max(0, photos.length - 1)); savePhotos(); renderType("photos"); break;
+    case "ph-clear": photos = []; pi = 0; savePhotos(); renderType("photos"); break;
+    case "device": if (DEVS[el.dataset.v]) { state.device = el.dataset.v; persist(); applyLook(); renderSheet(); } break;
+    case "night": state.night = !state.night; persist(); applyLook(); if (ui.mode === "interface") renderPuma(); else $(".dockcell").innerHTML = dockHtml(); break;
+    case "stab": sheet.tab = el.dataset.v; renderSheet(); { const sb = $(".sb", scrim); if (sb) sb.scrollTop = 0; } break;
+    case "ann-read": state.puma.ann = true; persist(); renderPuma(); openSheet({ kind: "settings", tab: "notes" }); break;
+    case "ann-x": state.puma.ann = true; persist(); renderPuma(); break;
+    case "calc": calcKey(el.dataset.v); { const d = $(".calc-d"); if (d) d.textContent = calc.d; } break;
+    case "cal-prev": ui.cm--; if (ui.cm < 0) { ui.cm = 11; ui.cy--; } renderApp(); break;
+    case "cal-next": ui.cm++; if (ui.cm > 11) { ui.cm = 0; ui.cy++; } renderApp(); break;
+    case "cal-today": ui.cy = null; renderApp(); break;
+    case "tk-toggle": { const it = state.data.todo.find((x) => x.id === id); if (it) it.done = !it.done; persist(); renderType("todo"); break; }
+    case "tk-del": state.data.todo = state.data.todo.filter((x) => x.id !== id); persist(); renderType("todo"); break;
+    case "tk-clear": state.data.todo = state.data.todo.filter((x) => !x.done); persist(); renderType("todo"); break;
+    case "ppk-choose": $("#ppkFile").click(); break;
+    case "pacc-open": $("#paccFile").click(); break;
+    case "pacc-save": savePacc(); break;
+    case "pkg-export": exportPpk(id); break;
+    case "pkg-remove": removePkg(id).then(() => { renderApp(); note("Removed. Its saved info is kept."); }); break;
+    case "pwg-remove": removePwg(id).then(() => { renderApp(); note("Widget package removed."); }); break;
+    case "pwg-export": exportPwg(id); break;
+    case "sd-save": savePacc().then((ok) => { if (ok) { closeSheet(); shutdown(); } }); break;
+    case "sd-now": closeSheet(); shutdown(); break;
+    case "power-on": ui.mode = state.puma.dm ? "display" : "interface"; ui.screen = "lock"; ui.edit = false; ui.idle = Date.now(); if (ui.mode === "display") build(); renderPuma(); bootScreen(); break;
+    case "lynk-test": lynk.status = "Checking"; { const el = $("[data-ly-status]"); if (el) el.textContent = "Checking"; } lynkPing(); break;
+    case "lynk-stop": lynk.ctl?.abort(); break;
+    case "lynk-clear": lynk.ctl?.abort(); lynk.msgs = []; lynk.busy = false; lynkRender(); break;
+    case "link-start": linkStart(); break;
+    case "link-copy": { const t = $("#lk-code"); if (t) { t.select(); navigator.clipboard?.writeText(t.value).then(() => note("Code copied"), () => note("Select the code and copy it.")); } break; }
+    case "link-connect": linkAccept($("#lk-reply")?.value || ""); break;
+    case "link-stop": linkStop(); renderSheet(); break;
+    case "acc-out": ui.user = null; linkStop(); renderSheet(); note("Signed out"); break;
+    case "acc-del": if (!ui.delArm) { ui.delArm = true; renderSheet(); setTimeout(() => { ui.delArm = false; if (sheet?.kind === "settings") renderSheet(); }, 4000); } else { ui.delArm = false; (async () => { acc = null; await fsDel("acct/_puma"); ui.user = null; state.puma.gate = false; persist(); linkStop(); renderSheet(); note("Account deleted"); })(); } break;
+    case "acc-export": if (acc) { saveBlob(new Blob([JSON.stringify({ puma: "account", app: "_puma", version: 1, saved: new Date().toISOString(), data: acc }, null, 2)], { type: "application/json" }), acc.user + ".account"); note("Saved " + acc.user + ".account"); } break;
+    case "acc-import": $("#accFile").click(); break;
+    case "unlock": unlock(); break;
+    case "lock": if (state.puma.gate) { ui.user = null; link.authed = false; } ui.screen = "lock"; renderPuma(); break;
+    case "home": ui.gv = -1; ui.screen = "home"; renderPuma(); break;
+    case "drawer": ui.drawer = ui.drawer === id ? "" : id; renderPuma(); break;
+    case "open-app": openItem(el.dataset.k); break;
+    case "to-puma": if (state.puma.dm && state.puma.pin && !ui.edit) askPin("verify", enterInterface); else enterInterface(); break;
+    case "cl-tab": ui.cl = el.dataset.v; renderApp(); break;
+    case "al-del": state.puma.alarms = state.puma.alarms.filter((x) => x.id !== id); persist(); renderApp(); break;
+    case "tm-set": tm.left = +el.dataset.v * 1000; tm.run = false; renderApp(); break;
+    case "tm-go": if (tm.run) { tm.left = Math.max(0, tm.end - Date.now()); tm.run = false; } else if (tm.left > 0) { tm.end = Date.now() + tm.left; tm.run = true; } renderApp(); break;
+    case "tm-reset": tm.run = false; tm.left = 300000; renderApp(); break;
+    case "sw-go": if (sw.run) { sw.acc = swNow(); sw.run = false; } else { sw.t0 = Date.now(); sw.run = true; } renderApp(); break;
+    case "sw-lap": if (sw.run || sw.acc) { sw.laps.unshift(swNow()); renderApp(); } break;
+    case "sw-reset": sw.run = false; sw.acc = 0; sw.laps = []; renderApp(); break;
+    case "gv-open": ui.gv = +el.dataset.i; renderApp(); break;
+    case "gv-prev": if (photos.length) { ui.gv = (ui.gv - 1 + photos.length) % photos.length; renderApp(); } break;
+    case "gv-next": if (photos.length) { ui.gv = (ui.gv + 1) % photos.length; renderApp(); } break;
+    case "gv-grid": ui.gv = -1; renderApp(); break;
+    case "gv-del": photos.splice(ui.gv, 1); ui.gv = -1; pi = 0; savePhotos(); renderApp(); break;
+    case "cam-flip": camFace = camFace === "user" ? "environment" : "user"; startCam(); break;
+    case "cam-snap": snap(); break;
+    case "mk-tab": ui.mk = el.dataset.v; renderApp(); break;
+    case "mk-app": { const k = el.dataset.k, l = state.puma.apps, i = l.indexOf(k); if (i >= 0) l.splice(i, 1); else l.push(k); persist(); renderApp(); break; }
+    case "mk-add": if (state.extra < 9) { state.extra++; const x = "x" + state.extra; state.slots[x] = type; state.sizes[x] = state.puma.wdg.find((w) => "pw:" + w.id === type)?.size || "regular"; persist(); build(); if (ui.mode === "interface" && ui.screen === "app" && ui.app === "market") renderApp(); if (sheet?.kind === "settings") renderSheet(); note(TYPES[type].name + " added to the display"); } break;
+    case "size": if (SZ[el.dataset.v]) { state.sizes[slot] = el.dataset.v; persist(); build(); renderSheet(); } break;
+    case "x-remove": { const last = "x" + state.extra; state.slots[slot] = state.slots[last]; state.sizes[slot] = state.sizes[last]; state.extra--; persist(); closeSheet(); build(); break; }
+    case "add-ask": sheet.adding = true; renderSheet(); break;
+    case "add-n": { const n = Math.min(+el.dataset.v, 9 - state.extra); state.extra += n; sheet.adding = false; persist(); build(); renderSheet(); note(`Added ${n} widget${n > 1 ? "s" : ""}. Open a tile's menu to choose what it shows.`); break; }
+    case "pin-set": askPin(state.puma.pin ? "old" : "new"); break;
+    case "pin-remove": askPin("verify", () => { state.puma.pin = null; persist(); note("Passcode removed"); }); break;
+    case "key": pinKey(el.dataset.v); break;
+    case "ring-stop": closeSheet(); break;
+    case "ring-snooze": snooze = { at: Date.now() + 300000, m: sheet.msg }; closeSheet(); note("Snoozed for 5 minutes"); break;
+    case "wx-refresh": loadWeather(); break;
+    case "news-refresh": loadNews(); break;
+    case "wx-geo":
+      if (!navigator.geolocation) { note("Location is not available here.", "alert"); break; }
+      navigator.geolocation.getCurrentPosition((p) => { const w = state.data.weather; w.lat = p.coords.latitude; w.lon = p.coords.longitude; w.city = "My location"; persist(); loadWeather(); renderSheet(); }, () => note("Location is not available here.", "alert"));
+      break;
+    case "egg": egg.k++; clearTimeout(egg.kt); egg.kt = setTimeout(() => (egg.k = 0), 1500);
+      if (egg.k >= 3) { egg.k = 0; Object.assign(egg, { a: 0, c: 0, n: 0, msg: "Tap to spin. Press and hold for a surprise." }); openSheet({ kind: "egg" }); } break;
+    case "egg-tap": if (egg.long) { egg.long = false; break; } egg.a += 40; egg.c++; egg.n++; egg.msg = egg.n >= 10 ? egg.n + " taps. Hub 6 feels spoiled." : "Taps: " + egg.n; eggUI(); break;
+    case "build": dev.n++; clearTimeout(dev.t); dev.t = setTimeout(() => (dev.n = 0), 2000);
+      if (state.exp.debug) { note("You are already a developer."); break; }
+      if (dev.n >= 7) { dev.n = 0; state.exp.debug = true; persist(); applyLook(); renderSheet(); note("You are now a developer! Debug widgets are on."); }
+      else if (dev.n >= 4) note(7 - dev.n + " taps away from being a developer."); break;
+    case "mu-play": mu.playing = !mu.playing; muUI(); break;
+    case "mu-prev": skip(-1); break;
+    case "mu-next": skip(1); break;
+    case "mu-seek": { const r = el.getBoundingClientRect(); mu.pos = clamp((e.clientX - r.left) / r.width, 0, 1) * curTrack().d; muUI(); break; }
+  }
+});
+stage.addEventListener("submit", (e) => {
+  const f = e.target.closest("[data-form]");
+  if (!f) return;
+  e.preventDefault();
+  if (f.dataset.form === "td-add") {
+    const inp = $("input", f), v = inp.value.trim();
+    if (!v) return;
+    state.data.todo.push({ id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: v.slice(0, 120), done: false });
+    const slot = f.closest("[data-w]").dataset.w;
+    persist(); renderType("todo"); keepFocus(`#td-in-${slot}`);
+  } else if (f.dataset.form?.startsWith("acc-")) {
+    accForm(f);
+  } else if (f.dataset.form === "lynk") {
+    const v = $("input", f).value.trim();
+    if (v && !lynk.busy) lynkSend(v);
+  } else if (f.dataset.form === "tk-add") {
+    const v = $("input", f).value.trim();
+    if (v) { state.data.todo.push({ id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: v.slice(0, 120), done: false }); persist(); renderType("todo"); $("#tk-in")?.focus(); }
+  } else if (f.dataset.form === "alarm") {
+    const t = $("#al-t").value;
+    if (/^\d{2}:\d{2}$/.test(t)) { state.puma.alarms.push({ id: "a" + Date.now().toString(36), t, l: $("#al-l").value.trim().slice(0, 30), on: true }); state.puma.alarms.sort((a, b) => (a.t < b.t ? -1 : 1)); persist(); renderApp(); }
+  } else if (f.dataset.form === "wxcity") {
+    const v = $("input", f).value.trim();
+    if (v) { const w = state.data.weather; w.city = v.slice(0, 40); w.lat = w.lon = null; loadWeather(); }
+  } else if (f.dataset.form === "maps") {
+    const q = $("input", f).value.trim();
+    if (q) geocodeMap(q);
+  } else if (f.dataset.form === "search") {
+    const v = $("input", f).value.trim();
+    if (v) $("a", f).click();
+  }
+});
+function onOpt(el) {
+  const [type, key] = el.dataset.opt.split("."), v = el.value;
+  if (type === "weather") {
+    const w = state.data.weather;
+    if (key === "city") { w.city = v.trim().slice(0, 40) || w.city; w.lat = w.lon = null; setTimeout(loadWeather, 0); }
+    else if (key === "cond") w.cond = COND.includes(v) ? v : w.cond;
+    else if (isFinite(parseFloat(v))) w[key] = clamp(Math.round(parseFloat(v)), -60, 60);
+    renderType("weather");
+  } else if (type === "music") {
+    const tr = v.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 30).map((l) => {
+      const parts = l.split(/\s+[—–-]\s+/); let d = 210;
+      if (parts.length > 1 && /^\d{1,2}:\d{2}$/.test(parts[parts.length - 1])) { const [mm, ss] = parts.pop().split(":"); d = clamp(+mm * 60 + +ss, 30, 3600); }
+      return { t: parts[0].slice(0, 60), a: (parts[1] || "Unknown artist").slice(0, 60), d };
+    });
+    if (tr.length) { state.data.music = { tracks: tr, i: 0 }; mu.pos = 0; renderType("music"); }
+    renderSheet();
+  }
+  persist();
+}
+stage.addEventListener("change", (e) => {
+  const t = e.target;
+  if (t.matches?.("[data-opt]")) return onOpt(t);
+  if (t.matches?.("input[data-lk]")) { const k = t.dataset.lk, v = t.value.trim(); if (k === "url" && /^https?:\/\/[^\s]{1,100}$/.test(v)) state.puma.lynk.url = v; else if (k === "model" && /^[\w.:\/-]{1,60}$/.test(v)) state.puma.lynk.model = v; else { t.value = state.puma.lynk[k]; return; } persist(); return; }
+  if (t.matches?.("input.sw[data-al]")) { const a = state.puma.alarms.find((x) => x.id === t.dataset.al); if (a) { a.on = t.checked; persist(); } return; }
+  if (t.matches?.("input.sw[data-pm]")) { if (t.dataset.pm === "gate") { state.puma.gate = t.checked; persist(); renderSheet(); return; } state.puma.dm = t.checked; persist(); applyLook(); if (t.checked) { closeSheet(); enterDisplay(false); note("Display Mode will stay on."); } else renderSheet(); return; }
+  if (t.matches?.("input.sw[data-exp]")) { state.exp[t.dataset.exp] = t.checked; persist(); if (t.dataset.exp === "live") { loadWeather(); loadNews(); loadFacts(); } build(); renderSheet(); }
+  else if (t.matches?.('input.rng[data-k="heat"]')) persist();
+});
+stage.addEventListener("input", (e) => {
+  const t = e.target;
+  if (t.matches?.("input[data-tint]")) { state.tint = t.value; stage.style.setProperty("--tint", t.value); persist(); return; }
+  if (t.matches?.(".sr-form input")) { const f = t.closest("form"), q = t.value.trim(), lk = $("a", f); if (lk) lk.href = q ? "https://www.google.com/search?q=" + encodeURIComponent(q) : "https://www.google.com/"; return; }
+  if (t.matches?.(".nt textarea")) { state.data.notes = t.value; persist(); return; }
+  if (!t.matches?.("input.rng[data-k]")) return;
+  const k = t.dataset.k, v = parseFloat(t.value), lo = +t.min, hi = +t.max;
+  t.style.setProperty("--p", ((v - lo) / (hi - lo)) * 100 + "%");
+  if (k === "heat") { state.data.controls.heat = v; $$("[data-heat]").forEach((n) => (n.textContent = v + "°C")); }
+  else { state[k] = k === "radius" ? clamp(v, 8, 48) : clamp(v, 0, 40); const o = $("#out-" + k); if (o) o.textContent = k === "radius" ? v + "px" : v; applyLook(); }
+  persist();
+});
+function eggUI() {
+  $$(".egg circle").forEach((c, i) => { c.setAttribute("stroke", EGGC[(i + egg.c) % 5]); c.style.transform = `rotate(${egg.a * (i % 2 ? -1 : 1) * (i + 1)}deg)`; });
+  const m = $("[data-egg-msg]"); if (m) m.textContent = egg.msg;
+}
+stage.addEventListener("pointerdown", (e) => {
+  if (!e.target.closest?.(".egg")) return;
+  clearTimeout(egg.lt);
+  egg.lt = setTimeout(() => { egg.long = true; egg.msg = "A cat wandered in. Leave out some slab food."; eggUI(); note("🐱 Neko found you"); }, 650);
+});
+["pointerup", "pointercancel"].forEach((ev) => document.addEventListener(ev, () => clearTimeout(egg.lt)));
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && sheet) closeSheet();
+  else if (sheet?.kind === "pass" && /^[0-9]$/.test(e.key)) pinKey(e.key);
+  else if (sheet?.kind === "pass" && e.key === "Backspace") pinKey("del");
+  else if (!sheet && e.key === "Enter") unlock();
+});
+
+let dt;
+const refreshDevice = () => { clearTimeout(dt); dt = setTimeout(() => renderType("device"), 200); };
+["online", "offline", "resize"].forEach((ev) => addEventListener(ev, refreshDevice));
+try { (navigator.connection || {}).addEventListener?.("change", refreshDevice); } catch {}
+try { navigator.getBattery?.().then((b) => { batt = b; ["levelchange", "chargingchange"].forEach((ev) => b.addEventListener(ev, refreshDevice)); refreshDevice(); }).catch(() => {}); } catch {}
+
+let dirty = false;
+const loadTex = () => {};
+
+ui.mode = state.puma.dm ? "display" : "interface";
+regWidgets();
+build();
+renderPuma();
+bootScreen();
+loadWeather();
+loadNews();
+loadFacts();
+setInterval(() => { loadWeather(); loadNews(); }, 9e5);
+setInterval(nextFact, 6e4);
+setInterval(() => { if (photos.length > 1) { pi = (pi + 1) % photos.length; renderType("photos"); } }, 7000);
+</script>
+
+</body></html>

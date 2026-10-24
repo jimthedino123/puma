@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PumaDev</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap">
+<style>
+:root{--ink:#141414;--cream:#F3F0E8;--o:#FF6A2B;--li:#C8B8FF;--lm:#DFFF5E;--sk:#7FD4FF;--page:var(--cream);--tx:var(--ink);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:var(--ink);--tx:var(--cream);color-scheme:dark}}
+:root[data-theme="dark"]{--page:var(--ink);--tx:var(--cream);color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--tx);font:15px/1.4 "Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif}
+#app{max-width:760px;margin:0 auto;padding:14px max(14px,env(safe-area-inset-left)) 90px}
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 14px}
+.logo{font-weight:800;font-size:32px;line-height:1;letter-spacing:-.04em}.logo i{font-style:normal;background:var(--o);color:var(--ink);padding:0 10px 3px;border-radius:12px;margin-left:4px}
+.st{font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;border:2px solid var(--tx);border-radius:999px;padding:3px 10px}
+nav{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px}
+.chip{border:2px solid var(--tx);background:none;color:var(--tx);border-radius:999px;padding:7px 16px;font:700 14px inherit;cursor:pointer;white-space:nowrap}.chip[aria-pressed=true]{background:var(--tx);color:var(--page)}
+.slab{border-radius:28px;padding:20px;margin-bottom:12px;color:var(--ink);background:var(--sc)}.a{--sc:var(--o)}.b{--sc:var(--li)}.c{--sc:var(--lm)}.d{--sc:var(--sk)}
+.slab .chip{border-color:var(--ink);color:var(--ink)}.slab .chip[aria-pressed=true]{background:var(--ink);color:var(--cream)}
+h2{margin:0 0 6px;font-weight:800;font-size:28px;line-height:1;letter-spacing:-.03em}h3{margin:0 0 4px;font-weight:800;font-size:19px}p{margin:6px 0}
+.f{width:100%;background:var(--cream);color:var(--ink);border:2px solid var(--ink);border-radius:14px;padding:10px 12px;font:inherit}
+textarea.f{resize:vertical;font:13px ui-monospace,Menlo,Consolas,monospace}input[type=range].f{padding:0;height:34px}input[type=color].f{padding:2px;height:42px}
+.fl{display:flex;flex-direction:column;gap:4px;margin:10px 0}.fl>span{font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0 10px}
+.btn{background:var(--ink);color:var(--cream);border:2px solid var(--ink);border-radius:999px;padding:10px 18px;font:700 14px inherit;cursor:pointer}.btn.alt{background:none;color:var(--ink)}.btn:disabled{opacity:.4;cursor:default}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sw{display:flex;align-items:center;gap:8px;margin:8px 0;font-weight:600}.sw input{width:20px;height:20px;accent-color:var(--ink)}
+ul.l{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}ul.l li{display:flex;align-items:center;gap:8px;background:var(--cream);border-radius:16px;padding:8px 12px}ul.l span{flex:1;min-width:0}ul.l .f{padding:6px 10px}
+.note{opacity:.75;font-size:13px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;pointer-events:none;background:var(--ink);color:var(--cream);border:2px solid var(--cream);padding:12px 20px;border-radius:999px;font-weight:700;transition:.2s;max-width:90vw}
+#toast.on{opacity:1;transform:translate(-50%,0)}#toast.bad{background:var(--o);color:var(--ink);border-color:var(--ink)}
+</style></head><body>
+<div id="app"></div><div id="toast" role="status"></div><input type="file" id="up" multiple hidden>
+<script>
+const $=s=>document.querySelector(s),enc=new TextEncoder(),dec=new TextDecoder();
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug=v=>String(v||'').toLowerCase().replace(/[^a-z0-9._-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40);
+const THEMES=['plain','dark','frosted','grape','citrus','ocean','blush','glass','stained'],PRESETS=['dusk','aurora','lagoon'],COND=['Clear','Partly cloudy','Cloudy','Rain','Storm','Snow','Fog'];
+const DEVS=[['auto','Auto'],['iphone17pro','iPhone 17 Pro'],['ipadmini','iPad mini'],['echoshow5','Echo Show 5']],SZ=[['small','Small'],['regular','Regular'],['large','Large']];
+const TYPES={weather:'Weather',news:'News',todo:'Todo list',device:'Device info',search:'Search',clock:'Clock',notes:'Notes',maps:'Map',facts:'Fun facts',photos:'Photos',debug:'Debug'};
+const two=a=>a.map(x=>[x,x[0].toUpperCase()+x.slice(1)]);
+const toast=(m,bad)=>{const t=$('#toast');t.textContent=m;t.className=bad?'bad on':'on';clearTimeout(toast.t);toast.t=setTimeout(()=>t.className='',3400)};
+
+/* zip */
+const crcT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc=u=>{let c=-1;for(let i=0;i<u.length;i++)c=crcT[(c^u[i])&255]^(c>>>8);return(~c)>>>0};
+function zip(files){const parts=[],cen=[];let off=0,n=0;for(const[name,d]of Object.entries(files)){const nb=enc.encode(name),c=crc(d),lh=new DataView(new ArrayBuffer(30)),ch=new DataView(new ArrayBuffer(46));
+lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(12,33,true);lh.setUint32(14,c,true);lh.setUint32(18,d.length,true);lh.setUint32(22,d.length,true);lh.setUint16(26,nb.length,true);
+ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(14,33,true);ch.setUint32(16,c,true);ch.setUint32(20,d.length,true);ch.setUint32(24,d.length,true);ch.setUint16(28,nb.length,true);ch.setUint32(42,off,true);
+parts.push(new Uint8Array(lh.buffer),nb,d);cen.push(new Uint8Array(ch.buffer),nb);off+=30+nb.length+d.length;n++}
+const cs=cen.reduce((a,b)=>a+b.length,0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,n,true);e.setUint16(10,n,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+return new Blob([...parts,...cen,new Uint8Array(e.buffer)],{type:'application/zip'})}
+const b64=u=>{let t='';for(let i=0;i<u.length;i+=0x8000)t+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(t)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const isText=n=>/\.(html?|css|js|mjs|json|txt|svg|md)$/i.test(n);
+const save=(blob,name)=>{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)};
+
+/* PumaDev account (this app only, stored in this browser) */
+const A={get:()=>{try{return JSON.parse(localStorage.getItem('pumadev.acct'))}catch{return null}},set:v=>{try{v?localStorage.setItem('pumadev.acct',JSON.stringify(v)):localStorage.removeItem('pumadev.acct')}catch{toast('This browser won’t save the account.',1)}}};
+const hx=n=>[...crypto.getRandomValues(new Uint8Array(n))].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function kdf(p,s){const k=await crypto.subtle.importKey('raw',enc.encode(p),'PBKDF2',false,['deriveBits']);return[...new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:enc.encode('pumadev:'+s),iterations:120000},k,256))].map(x=>x.toString(16).padStart(2,'0')).join('')}
+
+/* state */
+const tpl=k=>k==='ppk'?{kind:'ppk',name:'My App',id:'',version:'1.0',author:'',desc:'',app:'',size:'regular',entry:'index.html',sel:'index.html',files:{
+'index.html':{t:'<!doctype html>\n<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n<link rel="stylesheet" href="style.css"><title>My App</title></head>\n<body><h1>Hello from PumaDev</h1><p id="n">Taps: 0</p><button id="b">Tap</button>\n<script src="app.js"><\/script></body></html>'},
+'style.css':{t:'body{padding:20px;background:var(--puma-bg);color:var(--puma-fg);font-family:var(--puma-font)}\nbutton{font:inherit;padding:10px 18px;border-radius:var(--puma-radius);border:2px solid var(--puma-fg);background:none;color:inherit}'},
+'app.js':{t:'const n=document.getElementById("n");let c=0;\npuma.account.get().then(d=>{c=(d&&d.taps)||0;n.textContent="Taps: "+c});\ndocument.getElementById("b").onclick=()=>{c++;n.textContent="Taps: "+c;puma.account.set({taps:c})};'}}}
+:{kind:'pwg',name:'My Widgets',id:'',version:'1.0',author:'',desc:'',app:'',size:'regular',entry:'',sel:'widget.html',files:{
+'widget.html':{t:'<div class="w"><small>Now</small><b id="t"></b></div>\n<script>const t=document.getElementById("t");const u=()=>t.textContent=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});u();setInterval(u,1000)<\/script>'},
+'widget.css':{t:'.w{padding:16px}b{display:block;font:800 48px var(--puma-font)}small{color:var(--puma-dim)}'}}};
+const S={tab:'link',user:null,tries:0,auto:true,st:null,pk:[],pw:[],wd:[],b:tpl('ppk'),arm:false};
+const L={pc:null,dc:null,status:'idle',reply:'',hub:null,authed:false,buf:{},close(){try{L.dc?.close();L.pc?.close()}catch{}Object.assign(L,{pc:null,dc:null,status:'idle',reply:'',hub:null,authed:false,buf:{}});S.st=null}};
+const P={};
+
+/* link to Puma */
+const ice=pc=>new Promise(r=>{if(pc.iceGatheringState==='complete')return r();const t=setTimeout(r,2500);pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete'){clearTimeout(t);r()}})});
+async function send(o){const dc=L.dc;if(!dc||dc.readyState!=='open')throw new Error('PumaDev isn’t linked to a hub.');const t=JSON.stringify(o),id=Math.random().toString(36).slice(2,8),N=14000,n=Math.max(1,Math.ceil(t.length/N));for(let i=0;i<n;i++){while(dc.bufferedAmount>1e6)await new Promise(r=>setTimeout(r,20));dc.send(JSON.stringify({c:id,i,n,d:t.slice(i*N,(i+1)*N)}))}}
+const call=(m,a)=>new Promise((res,rej)=>{const id=Math.random().toString(36).slice(2,8),t=setTimeout(()=>{delete P[id];rej(new Error('Puma didn’t reply.'))},30000);P[id]=[v=>{clearTimeout(t);res(v)},e=>{clearTimeout(t);rej(e)}];send({id,m,a}).catch(e=>{delete P[id];clearTimeout(t);rej(e)})});
+function wire(dc){dc.onopen=hello;dc.onclose=()=>{L.status='closed';L.authed=false;draw()};
+dc.onmessage=e=>{try{const p=JSON.parse(e.data),a=(L.buf[p.c]||=[]);a[p.i]=p.d;if(a.filter(x=>x!==undefined).length===p.n){delete L.buf[p.c];const m=JSON.parse(a.join('')),q=P[m.id];if(q){delete P[m.id];m.ok?q[0](m.d):q[1](new Error(m.err||'Something went wrong.'))}}}catch{}};if(dc.readyState==='open')hello()}
+async function hello(){try{L.hub=await call('hello');L.status='linked'}catch(e){toast(e.message,1)}draw()}
+async function open(code){L.close();
+try{const o=JSON.parse(atob(code.replace(/\s+/g,'')));if(o.t!=='puma-offer')throw new Error('That isn’t a Puma link code.');
+const pc=L.pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+pc.ondatachannel=e=>{L.dc=e.channel;wire(e.channel)};
+pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='failed')L.status='failed';else if(s==='disconnected'||s==='closed'){L.status='closed';L.authed=false}draw()};
+await pc.setRemoteDescription({type:'offer',sdp:o.sdp});await pc.setLocalDescription(await pc.createAnswer());await ice(pc);
+L.reply=btoa(JSON.stringify({t:'puma-answer',sdp:pc.localDescription.sdp}));L.status='reply'}
+catch(e){L.status='failed';toast(e.message||'That code didn’t work.',1)}draw()}
+async function pull(){const r=await call('get');S.st=r.state;S.pk=r.pkgs||[];S.pw=r.pwgs||[];S.wd=r.wdg||[];draw()}
+async function push(){await call('set',{state:S.st});toast('Sent to Puma')}
+const later=()=>{if(!S.auto||!L.authed)return;clearTimeout(later.t);later.t=setTimeout(()=>push().catch(e=>toast(e.message,1)),600)};
+
+/* packages */
+function buildPkg(){const b=S.b,id=slug(b.id||b.name),names=Object.keys(b.files),f={},st=n=>n.split('/').pop().replace(/\.[^.]+$/,'');
+if(!b.name.trim())throw new Error('Give the package a name.');if(!id||id[0]==='_')throw new Error('Package ids can’t be empty or start with an underscore.');
+const htmls=names.filter(n=>/\.html?$/i.test(n)),wn=b.kind==='pwg'?htmls:htmls.filter(n=>n!==b.entry&&/(^|\/)widget[^/]*\.html?$/i.test(n));
+if(b.kind==='ppk'&&!b.files[b.entry])throw new Error(`The entry file “${b.entry}” is missing.`);if(b.kind==='pwg'&&!htmls.length)throw new Error('Add at least one .html file for a widget.');
+const widgets=wn.slice(0,6).map(n=>({id:slug(st(n)),name:st(n).replace(/[-_]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),entry:n,css:names.find(c=>/\.css$/i.test(c)&&st(c)===st(n))||names.find(c=>/\.css$/i.test(c))||'',size:b.size}));
+const m=b.kind==='ppk'?{id,name:b.name.trim(),version:b.version||'1.0',author:b.author,description:b.desc,entry:b.entry,widgets}:{id,name:b.name.trim(),version:b.version||'1.0',author:b.author,app:slug(b.app)||id,widgets};
+f['manifest.json']=enc.encode(JSON.stringify(m,null,2));for(const n of names)f[n]=b.files[n].t!=null?enc.encode(b.files[n].t):b.files[n].u;
+return{blob:zip(f),name:id+'.'+b.kind}}
+function loadPkg(r,kind){const m=r.manifest,files={};for(const[k,v]of Object.entries(r.files)){const u=unb64(v);files[k]=isText(k)?{t:dec.decode(u)}:{u}}
+const ks=Object.keys(files),entry=m.entry||'index.html';S.b={kind,name:m.name,id:m.id,version:m.version||'1.0',author:m.author||'',desc:m.description||'',app:m.app||'',size:m.widgets?.[0]?.size||'regular',entry,files,sel:files[entry]?entry:ks[0]};draw()}
+
+/* views */
+const pget=p=>p.split('.').reduce((o,k)=>o?.[k],S);
+const pset=(p,v)=>{const a=p.split('.'),l=a.pop();a.reduce((o,k)=>o[k],S)[l]=v};
+const opt=(a,c)=>a.map(([v,l])=>`<option value="${esc(v)}"${v==c?' selected':''}>${esc(l)}</option>`).join('');
+const sel=(p,a,x='')=>`<select class="f" data-p="${p}" ${x}>${opt(a,pget(p))}</select>`;
+const inp=(p,t='text',x='')=>`<input class="f" type="${t}" data-p="${p}" value="${esc(pget(p))}" ${x}>`;
+const chk=(p,l)=>`<label class="sw"><input type="checkbox" data-p="${p}"${pget(p)?' checked':''}> ${l}</label>`;
+const lab=(l,h)=>`<label class="fl"><span>${l}</span>${h}</label>`;
+const fld=(n,l,t='text',x='')=>lab(l,`<input class="f" name="${n}" type="${t}" ${x}>`);
+const tabs=()=>[['link','Link'],['edit','Edit'],['build','Build'],['set','Settings']].map(([k,n])=>`<button class="chip" data-a="tab" data-v="${k}" aria-pressed="${S.tab===k}">${n}</button>`).join('');
+const gate=a=>`<header><b class="logo">Puma<i>Dev</i></b></header><section class="slab b"><h2>Sign in</h2><p>Welcome back, ${esc(a.name)}.</p><form data-f="login">${fld('u','Username','text',`required autocomplete="username" value="${esc(a.user)}"`)}${fld('p','Password','password','required autocomplete="current-password"')}<div class="btns"><button class="btn">Sign in</button></div></form><p class="note">Forgot it? Clearing this site’s data in your browser resets PumaDev.</p></section>`;
+
+function vLink(){const s=L.status,h=L.hub;let x=`<section class="slab a"><h2>${{idle:'Not linked',reply:'Waiting for Puma',linked:L.authed?'Signed in':'Linked',failed:'Link failed',closed:'Disconnected'}[s]}</h2><p>${L.authed?`Editing ${esc(h?.account||'your hub')} on Puma ${esc(h?.hub||'')}.`:'Link PumaDev to your hub, device to device. No server in between.'}</p>${s!=='idle'?'<div class="btns"><button class="btn alt" data-a="drop">Disconnect</button></div>':''}</section>`;
+if(!L.authed&&s!=='linked')x+=`<section class="slab b"><h3>1. Paste Puma’s link code</h3><p class="note">On your hub: Settings → PumaDev → Create link code.</p><textarea class="f" id="code" rows="4" placeholder="Link code"></textarea><div class="btns"><button class="btn" data-a="open">Create reply code</button></div></section>`;
+if(s==='reply')x+=`<section class="slab c"><h3>2. Send this reply code back</h3><textarea class="f" id="rep" rows="4" readonly>${esc(L.reply)}</textarea><div class="btns"><button class="btn" data-a="copy">Copy code</button></div><p class="note">Paste it into Puma’s “PumaDev’s reply code” box and tap Connect.</p></section>`;
+if(s==='linked'&&!L.authed)x+=`<section class="slab d"><h3>Sign in to the hub</h3><form data-f="hub">${fld('u','Hub username','text',`required value="${esc(h?.account||'')}"`)}${fld('p','Hub password','password','required')}<div class="btns"><button class="btn">Sign in</button></div></form>${h?.account?'':'<p class="note">This hub has no account yet. Create one in Puma’s Settings → Account.</p>'}</section>`;
+return x}
+function vEdit(){if(!L.authed)return`<section class="slab b"><h2>Link a hub first</h2><p>Editing needs a signed-in link to Puma.</p><div class="btns"><button class="btn" data-a="tab" data-v="link">Go to Link</button></div></section>`;
+const st=S.st;if(!st)return`<section class="slab b"><h2>Loading…</h2></section>`;
+const tk=Object.keys(st.slots).filter(k=>/^[a-h]$/.test(k)||(/^x\d$/.test(k)&&+k[1]<=st.extra)),ty=[...Object.entries(TYPES),...S.wd.map(w=>['pw:'+w.id,w.name+' (widget)'])];
+const w=st.data.weather,c=st.data.controls;
+return`<section class="slab a"><h2>Editing live</h2><label class="sw"><input type="checkbox" id="auto"${S.auto?' checked':''}> Send changes as I make them</label><div class="btns"><button class="btn" data-a="push">Send to Puma</button><button class="btn alt" data-a="pull">Pull from Puma</button></div></section>
+<section class="slab b"><h3>Look</h3><div class="row">${lab('Theme',sel('st.theme',two(THEMES)))}${lab('Wallpaper',sel('st.wall.id',st.wall.id==='custom'?[['custom','Custom']]:two(PRESETS),'data-w=1'))}${lab('Device',sel('st.device',DEVS))}</div>${chk('st.night','Night mode')}${lab('Corner radius',inp('st.radius','range','min="8" max="48" data-n="1"'))}${lab('Tint',inp('st.tint','color'))}</section>
+<section class="slab c"><h3>Tiles</h3><ul class="l">${tk.map(k=>`<li><span><b>${k.toUpperCase()}</b></span>${sel('st.slots.'+k,ty)}${sel('st.sizes.'+k,SZ)}</li>`).join('')}</ul></section>
+<section class="slab d"><h3>Home data</h3><div class="row">${lab('City',inp('st.data.weather.city','text','maxlength="40"'))}${lab('Temp °C',inp('st.data.weather.temp','number','data-n="1"'))}${lab('Conditions',sel('st.data.weather.cond',COND.map(x=>[x,x])))}${lab('High',inp('st.data.weather.hi','number','data-n="1"'))}${lab('Low',inp('st.data.weather.lo','number','data-n="1"'))}</div>
+${lab('Heating '+c.heat+'°',inp('st.data.controls.heat','range','min="14" max="28" data-n="1"'))}<div class="row">${chk('st.data.controls.living','Living room')}${chk('st.data.controls.kitchen','Kitchen')}${chk('st.data.controls.porch','Porch')}${chk('st.data.controls.lock','Door locked')}</div>
+${lab('Notes',`<textarea class="f" rows="3" data-p="st.data.notes">${esc(st.data.notes)}</textarea>`)}${lab('Tasks (one per line, [x] marks done)',`<textarea class="f" rows="4" data-k="todo">${esc(st.data.todo.map(t=>(t.done?'[x] ':'')+t.t).join('\n'))}</textarea>`)}</section>
+<section class="slab a"><h3>Everything else</h3><p class="note">The full page data as JSON. Puma checks it before applying.</p><textarea class="f" id="json" rows="10">${esc(JSON.stringify(st,null,1))}</textarea><div class="btns"><button class="btn" data-a="json">Apply JSON</button></div></section>`}
+function vBuild(){const b=S.b,names=Object.keys(b.files),f=b.files[b.sel],ok=L.authed;
+const lst=(a,k)=>a.map(p=>`<li><span><b>${esc(p.name)}</b> <small>v${esc(p.version)}</small></span><button class="btn alt" data-a="edit" data-k="${k}" data-id="${esc(p.id)}">Edit</button><button class="btn alt" data-a="rm" data-k="${k}" data-id="${esc(p.id)}">Remove</button></li>`).join('')||'<li><span class="note">None yet.</span></li>';
+return`<section class="slab b"><h2>Build a package</h2><div class="btns" style="margin:0 0 6px"><button class="chip" data-a="kind" data-v="ppk" aria-pressed="${b.kind==='ppk'}">.ppk app</button><button class="chip" data-a="kind" data-v="pwg" aria-pressed="${b.kind==='pwg'}">.pwg widgets</button></div>
+<div class="row">${lab('Name',inp('b.name','text','maxlength="40"'))}${lab('Id (optional)',inp('b.id','text','maxlength="40" placeholder="'+esc(slug(b.name))+'"'))}${lab('Version',inp('b.version','text','maxlength="20"'))}${lab('Author',inp('b.author','text','maxlength="40"'))}
+${b.kind==='ppk'?lab('Entry file',sel('b.entry',names.filter(n=>/\.html?$/i.test(n)).map(n=>[n,n]),'data-r="1"'))+lab('Description',inp('b.desc','text','maxlength="160"')):lab('For app id',inp('b.app','text','maxlength="40" placeholder="owner app, optional"'))}${lab('Widget size',sel('b.size',SZ))}</div>
+<p class="note">${b.kind==='ppk'?'An app is a zip with manifest.json and your files. Extra files named widget*.html also become widgets.':'Each .html file becomes a widget, styled by the .css with the same name. Use var(--puma-bg), var(--puma-fg), var(--puma-dim), var(--puma-line) and var(--puma-radius).'}</p></section>
+<section class="slab c"><h3>Files</h3><nav style="padding:0 0 8px">${names.map(n=>`<button class="chip" data-a="file" data-v="${esc(n)}" aria-pressed="${b.sel===n}">${esc(n)}</button>`).join('')}</nav>
+${f?(f.t!=null?`<textarea class="f" rows="12" data-k="file" spellcheck="false">${esc(f.t)}</textarea>`:`<p class="note">${esc(b.sel)} is a binary file (${f.u.length} bytes) and is included as is.</p>`):''}
+<div class="row" style="margin-top:10px"><input class="f" id="nf" placeholder="new-file.html"><div class="btns" style="margin:0"><button class="btn alt" data-a="addf">Add file</button><button class="btn alt" data-a="upl">Upload</button><button class="btn alt" data-a="delf"${names.length<2?' disabled':''}>Delete</button></div></div></section>
+<section class="slab a"><h3>Export</h3><div class="btns"><button class="btn" data-a="dl">Download .${b.kind}</button><button class="btn" data-a="send"${ok?'':' disabled'}>Install on Puma</button></div>${ok?'':'<p class="note">Link and sign in to install straight onto your hub.</p>'}</section>
+<section class="slab d"><h3>On your hub</h3>${ok?`<p class="note">Apps</p><ul class="l">${lst(S.pk,'ppk')}</ul><p class="note">Widget packages</p><ul class="l">${lst(S.pw,'pwg')}</ul>`:'<p class="note">Sign in to a hub to see what’s installed.</p>'}</section>`}
+function vSet(){const a=A.get();let x='';
+if(!a)x=`<section class="slab b"><h2>Create an account</h2><p>Optional. It locks PumaDev behind a password on this device.</p><form data-f="create">${fld('u','Username','text','required maxlength="24" autocomplete="username" pattern="[a-z0-9._-]{3,24}" title="3 to 24 letters, numbers, dots, dashes or underscores"')}${fld('n','Display name','text','maxlength="30"')}${fld('p','Password','password','required minlength="6" autocomplete="new-password"')}${fld('p2','Confirm password','password','required autocomplete="new-password"')}<div class="btns"><button class="btn">Create account</button></div></form></section>`;
+else x=`<section class="slab b"><h2>${esc(a.name)}</h2><p>@${esc(a.user)} · created ${esc(String(a.created).slice(0,10))}</p><div class="btns"><button class="btn" data-a="out">Sign out</button><button class="btn alt" data-a="del">${S.arm?'Tap again to delete':'Delete account'}</button></div></section>`;
+return x+`<section class="slab c"><h3>Linking</h3><label class="sw"><input type="checkbox" id="auto2"${S.auto?' checked':''}> Send edits to Puma as I make them</label></section><section class="slab d"><h3>About</h3><p>PumaDev 1.0 · works with Puma 6.1a and later.</p><p class="note">Your hub’s password is only sent over the direct link and is never saved here.</p></section>`}
+
+function draw(){const y=scrollY,a=A.get();let h;
+if(a&&!S.user)h=gate(a);else h=`<header><b class="logo">Puma<i>Dev</i></b><span class="st">${L.authed?'Linked':'Offline'}</span></header><nav>${tabs()}</nav>`+({link:vLink,edit:vEdit,build:vBuild,set:vSet}[S.tab])();
+$('#app').innerHTML=h;scrollTo(0,y)}
+
+/* events */
+document.addEventListener('click',async e=>{const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,v=el.dataset.v,b=S.b;
+try{switch(a){
+case'tab':S.tab=v;if(v==='edit'&&L.authed&&!S.st)await pull();break;
+case'open':await open($('#code').value);return;
+case'copy':$('#rep').select();navigator.clipboard?.writeText(L.reply).then(()=>toast('Code copied'),()=>toast('Select the code and copy it.'));return;
+case'drop':L.close();break;
+case'pull':await pull();toast('Pulled from Puma');return;
+case'push':await push();return;
+case'json':S.st=JSON.parse($('#json').value);await push();break;
+case'kind':if(b.kind!==v){const o=b;S.b={...tpl(v),name:o.name,id:o.id,author:o.author,version:o.version}}break;
+case'file':b.sel=v;break;
+case'addf':{const n=$('#nf').value.trim();if(!/^[\w.\/-]{1,80}$/.test(n)||n.includes('..'))throw new Error('Use letters, numbers, dots and dashes for the file name.');if(!b.files[n])b.files[n]={t:''};b.sel=n;break}
+case'delf':delete b.files[b.sel];b.sel=Object.keys(b.files)[0];if(!b.files[b.entry])b.entry=Object.keys(b.files).find(n=>/\.html?$/i.test(n))||'';break;
+case'upl':$('#up').click();return;
+case'dl':{const r=buildPkg();save(r.blob,r.name);toast('Saved '+r.name);return}
+case'send':{const r=buildPkg(),res=await call('install',{b64:b64(new Uint8Array(await r.blob.arrayBuffer())),name:r.name});toast(`Installed on Puma${res.widgets?` with ${res.widgets} widget${res.widgets>1?'s':''}`:''}`);await pull();return}
+case'edit':loadPkg(await call('pkg.get',{kind:el.dataset.k,id:el.dataset.id}),el.dataset.k);return;
+case'rm':await call('remove',{kind:el.dataset.k,id:el.dataset.id});toast('Removed from Puma');await pull();return;
+case'out':S.user=null;break;
+case'del':if(!S.arm){S.arm=true;setTimeout(()=>{S.arm=false;if(S.tab==='set')draw()},4000)}else{S.arm=false;A.set(null);S.user=null;toast('Account deleted')}break}
+}catch(err){toast(err.message||'That didn’t work.',1)}draw()});
+function onEdit(e){const el=e.target;
+if(el.id==='auto'||el.id==='auto2'){S.auto=el.checked;return}
+if(el.dataset.k==='file'){S.b.files[S.b.sel].t=el.value;return}
+if(el.dataset.k==='todo'){S.st.data.todo=el.value.split('\n').filter(l=>l.trim()).slice(0,60).map((l,i)=>({id:'t'+(i+1),t:l.replace(/^\[x\]\s*/i,'').slice(0,120),done:/^\[x\]/i.test(l)}));later();return}
+const p=el.dataset.p;if(!p)return;pset(p,el.type==='checkbox'?el.checked:(el.type==='range'||el.dataset.n)?parseFloat(el.value)||0:el.value);
+if(p.startsWith('st.'))later();if(el.dataset.r||(e.type==='change'&&p==='st.data.controls.heat'))draw()}
+document.addEventListener('input',onEdit);document.addEventListener('change',onEdit);
+document.addEventListener('submit',async e=>{e.preventDefault();const f=e.target,d=Object.fromEntries(new FormData(f)),k=f.dataset.f;
+try{if(k==='hub'){await call('auth',{user:d.u,pass:d.p});L.authed=true;toast('Signed in to the hub');await pull();S.tab='edit'}
+else if(k==='create'){const u=d.u.trim().toLowerCase();if(!/^[a-z0-9._-]{3,24}$/.test(u))throw new Error('Usernames are 3 to 24 letters, numbers, dots, dashes or underscores.');if(d.p.length<6)throw new Error('Use a password of at least 6 characters.');if(d.p!==d.p2)throw new Error('The passwords don’t match.');
+const salt=hx(8);A.set({user:u,name:d.n.trim().slice(0,30)||u,salt,hash:await kdf(d.p,salt),created:new Date().toISOString()});S.user=u;toast('Account created')}
+else if(k==='login'){const a=A.get();if(Date.now()<(S.until||0))throw new Error('Too many tries. Wait a moment.');
+if(d.u.trim().toLowerCase()!==a.user||(await kdf(d.p,a.salt))!==a.hash){if(++S.tries>=5){S.until=Date.now()+30000;S.tries=0}throw new Error('Wrong username or password.')}S.tries=0;S.user=a.user}}
+catch(err){toast(err.message||'That didn’t work.',1)}draw()});
+$('#up').addEventListener('change',async e=>{for(const f of e.target.files){const u=new Uint8Array(await f.arrayBuffer());S.b.files[f.name]=isText(f.name)?{t:dec.decode(u)}:{u};S.b.sel=f.name}e.target.value='';draw()});
+draw();
+</script></body></html>
