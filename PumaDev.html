@@ -189,4 +189,6 @@ if(d.u.trim().toLowerCase()!==a.user||(await kdf(d.p,a.salt))!==a.hash){if(++S.t
 catch(err){toast(err.message||'That didn’t work.',1)}draw()});
 $('#up').addEventListener('change',async e=>{for(const f of e.target.files){const u=new Uint8Array(await f.arrayBuffer());S.b.files[f.name]=isText(f.name)?{t:dec.decode(u)}:{u};S.b.sel=f.name}e.target.value='';draw()});
 draw();
-</script></body></html>
+</script>
+<script src="hide-netlify-badge.js"></script>
+</body></html>
